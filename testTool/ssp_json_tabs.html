@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>SSP JSON Tab 檢視器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    .app-header {
+      padding: 18px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #d7dde5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .file-picker,
+    .json-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 280px;
+    }
+
+    .file-picker input,
+    .json-picker select {
+      width: 100%;
+      max-width: 420px;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .json-picker.hidden {
+      display: none;
+    }
+
+    .hint-text {
+      color: #64748b;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .summary {
+      padding: 14px 24px;
+      color: #475569;
+      border-bottom: 1px solid #d7dde5;
+      background: #eef3f8;
+      font-size: 14px;
+    }
+
+
+    .top-toggle-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 24px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-bottom: 1px solid #1e293b;
+      font-size: 13px;
+    }
+
+    .top-toggle-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-toggle-button {
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #f8fafc;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .top-toggle-button:hover {
+      background: #334155;
+    }
+
+    body.top-collapsed .app-header,
+    body.top-collapsed .summary {
+      display: none;
+    }
+
+    body.top-collapsed .content.compare-content {
+      height: calc(100vh - 104px);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 14px 24px 0;
+      background: #ffffff;
+      border-bottom: 1px solid #d7dde5;
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      min-width: 150px;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-bottom: 0;
+      border-radius: 6px 6px 0 0;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+
+    .content {
+      padding: 18px 24px 28px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eaf1fb;
+      color: #1e3a5f;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .image-column {
+      width: 54px;
+      text-align: center;
+    }
+
+    .image-button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .image-button:hover {
+      background: #dbeafe;
+      border-color: #60a5fa;
+    }
+
+    .image-button:disabled {
+      color: #94a3b8;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      padding: 36px 20px;
+      color: #64748b;
+      text-align: center;
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    .image-dialog {
+      width: min(92vw, 980px);
+      max-height: 90vh;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .34);
+    }
+
+    .image-dialog::backdrop {
+      background: rgba(15, 23, 42, .58);
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #d7dde5;
+      background: #f8fafc;
+    }
+
+    .dialog-title {
+      min-width: 0;
+      margin: 0;
+      color: #1e293b;
+      font-size: 15px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .dialog-close {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .dialog-body {
+      min-height: 220px;
+      max-height: calc(90vh - 60px);
+      padding: 16px;
+      overflow: auto;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .dialog-body img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+
+    .content.compare-content {
+      height: calc(100vh - 170px);
+      overflow: hidden;
+    }
+
+    .compare-layout {
+      position: relative;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 1.15fr) minmax(320px, .85fr);
+      gap: 16px;
+    }
+
+    .compare-left,
+    .compare-right {
+      min-height: 0;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .compare-left {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .site-toolbar {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .site-toolbar label {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .site-image-wrap {
+      position: relative;
+      min-height: 0;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+    }
+
+    .site-file-id {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      max-width: calc(100% - 24px);
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .92);
+      color: #334155;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: break-word;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .10);
+    }
+
+    .site-image-body {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .site-image-body img,
+    .pin-drawer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .compare-right {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .pin-list-title {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #1e293b;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .raw-name-list {
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .raw-name-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .raw-name-text {
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .site-select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .pin-button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .pin-button:disabled {
+      color: #94a3b8;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .component-left {
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+
+    .component-main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(220px, .42fr) minmax(260px, .58fr);
+      gap: 0;
+    }
+
+    .component-list-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-right: 1px solid #e2e8f0;
+      background: #ffffff;
+    }
+
+    .component-search-wrap {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .component-search-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #1f2937;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .component-list {
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+      background: #ffffff;
+    }
+
+    .component-list-item {
+      width: 100%;
+      padding: 11px 12px;
+      border: 0;
+      border-bottom: 1px solid #edf2f7;
+      background: #ffffff;
+      color: #334155;
+      text-align: left;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+      word-break: break-word;
+      cursor: pointer;
+    }
+
+    .component-list-item:hover {
+      background: #f1f5f9;
+    }
+
+    .component-list-item.active {
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    .component-image-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+
+    .pin-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(430px, 92%);
+      height: 100%;
+      background: #ffffff;
+      border-left: 1px solid #d7dde5;
+      box-shadow: -20px 0 48px rgba(15, 23, 42, .18);
+      transform: translateX(106%);
+      transition: transform .22s ease;
+      z-index: 5;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .pin-drawer.open {
+      transform: translateX(0);
+    }
+
+    .pin-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .pin-drawer-title {
+      margin: 0;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      word-break: break-word;
+    }
+
+    .drawer-close {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .pin-drawer-body {
+      min-height: 0;
+      padding: 14px;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+    }
+
+    @media (max-width: 720px) {
+
+      .app-header,
+      .summary,
+      .tabs,
+      .content {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .controls,
+      .file-picker,
+      .json-picker {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .tab-button {
+        min-width: 130px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top-toggle-bar">
+    <span
+      id="topToggleTitle"
+      class="top-toggle-title"
+    >資料載入區已展開</span>
+    <button
+      id="topToggleButton"
+      class="top-toggle-button"
+      type="button"
+    >收合載入區</button>
+  </div>
+  <header class="app-header">
+    <h1>SSP JSON Tab 檢視器</h1>
+    <div class="controls">
+      <label class="file-picker">
+        <span>選擇資料夾</span>
+        <input
+          id="folderInput"
+          type="file"
+          webkitdirectory
+          directory
+          multiple
+        >
+        <span class="hint-text">請選 JSON 所在的車型資料夾</span>
+      </label>
+      <label
+        id="jsonPicker"
+        class="json-picker hidden"
+      >
+        <span>JSON 檔</span>
+        <select id="jsonSelect"></select>
+      </label>
+      <label
+        id="compePicker"
+        class="json-picker hidden"
+      >
+        <span>名稱 JSON</span>
+        <select id="compeSelect"></select>
+      </label>
+    </div>
+  </header>
+
+  <div
+    id="summary"
+    class="summary"
+  >請選擇包含 JSON 與 Picture 資料夾的車型資料夾。</div>
+
+  <nav
+    class="tabs"
+    aria-label="資料分類"
+  >
+    <button
+      class="tab-button active"
+      type="button"
+      data-tab="ProjectList"
+    >ProjectList</button>
+    <button
+      class="tab-button"
+      type="button"
+      data-tab="PictureList_site"
+    >PictureList_site</button>
+    <button
+      class="tab-button"
+      type="button"
+      data-tab="PictureList_pin"
+    >PictureList_pin</button>
+    <button
+      class="tab-button"
+      type="button"
+      data-tab="SiteCompare"
+    >Site 對應圖</button>
+    <button
+      class="tab-button"
+      type="button"
+      data-tab="ComponentCompare"
+    >元件對應圖</button>
+  </nav>
+
+  <main
+    id="content"
+    class="content"
+  >
+    <section
+      id="tableContainer"
+      class="empty-state"
+    >尚未載入資料。</section>
+  </main>
+
+  <dialog
+    id="imageDialog"
+    class="image-dialog"
+  >
+    <div class="dialog-header">
+      <p
+        id="dialogTitle"
+        class="dialog-title"
+      >圖片預覽</p>
+      <button
+        id="dialogCloseButton"
+        class="dialog-close"
+        type="button"
+        aria-label="關閉"
+      >×</button>
+    </div>
+    <div
+      id="dialogBody"
+      class="dialog-body"
+    ></div>
+  </dialog>
+
+  <script>
+    // 中文註解：集中管理目前載入的 JSON、資料夾檔案、圖片索引、過濾資料，以及目前選中的 tab。
+    const appState = {
+      activeTab: "ProjectList",
+      rawData: null,
+      compeData: {},
+      currentJsonFile: null,
+      currentCompeFile: null,
+      currentImageUrl: "",
+      currentPinDrawerUrl: "",
+      folderFiles: [],
+      jsonFiles: [],
+      compeFiles: [],
+      imageFileMap: new Map(),
+      selectedSiteIndex: 0,
+      selectedComponentIndex: 0,
+      componentSearchKeyword: "",
+      componentListScrollTop: 0,
+      componentSearchTimer: null,
+      filteredData: {
+        ProjectList: [],
+        PictureList_site: [],
+        PictureList_pin: [],
+      },
+    };
+
+    // 中文註解：定義三個 tab 對應的欄位順序，讓表格顯示穩定且容易比對。
+    const tableColumns = {
+      ProjectList: [
+        "SSPNb",
+        "FactCls",
+        "Name_CN",
+        "FactFileName",
+        "ParentName",
+        "Specify_AutoInt",
+        "Specify_Nb",
+        "Specify_Tw",
+        "includeObjectName",
+      ],
+      PictureList_site: [
+        "FileID",
+        "Name_CN",
+        "PictureType",
+        "ParentName",
+        "INFOOBJECTID",
+      ],
+      PictureList_pin: [
+        "FileID",
+        "Name_CN",
+        "PictureType",
+        "ParentName",
+        "INFOOBJECTID",
+      ],
+    };
+
+    const folderInput = document.getElementById("folderInput");
+    const topToggleButton = document.getElementById("topToggleButton");
+    const topToggleTitle = document.getElementById("topToggleTitle");
+    const jsonPicker = document.getElementById("jsonPicker");
+    const jsonSelect = document.getElementById("jsonSelect");
+    const compePicker = document.getElementById("compePicker");
+    const compeSelect = document.getElementById("compeSelect");
+    const summaryElement = document.getElementById("summary");
+    const tableContainer = document.getElementById("tableContainer");
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const imageDialog = document.getElementById("imageDialog");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const dialogBody = document.getElementById("dialogBody");
+    const dialogCloseButton = document.getElementById("dialogCloseButton");
+
+
+
+    // 中文註解：切換上方載入區顯示狀態；收合後保留細控制列，避免誤點並增加內容可視高度。
+    function setTopCollapsed(isCollapsed) {
+      document.body.classList.toggle("top-collapsed", isCollapsed);
+      topToggleButton.textContent = isCollapsed ? "展開載入區" : "收合載入區";
+      topToggleTitle.textContent = isCollapsed ? "資料載入區已收合" : "資料載入區已展開";
+      renderActiveView();
+    }
+
+    // 中文註解：使用者點擊控制列按鈕時，依目前 body class 反向切換收合狀態。
+    function toggleTopPanel() {
+      setTopCollapsed(!document.body.classList.contains("top-collapsed"));
+    }
+
+    // 中文註解：判斷單筆資料是否帶有「找不到檔案」註記；符合時畫面不顯示該筆資料。
+    function isMissingFileNote(item) {
+      const noteText = String(item && item._note ? item._note : "").toLowerCase();
+      return noteText.includes("file not found") || noteText.includes("找不到檔案");
+    }
+
+    // 中文註解：安全取得指定資料清單；若 JSON 缺少欄位或不是陣列，回傳空陣列避免畫面錯誤。
+    function getList(data, listName) {
+      return Array.isArray(data && data[listName]) ? data[listName] : [];
+    }
+
+
+
+    // 中文註解：統一取得 PictureList 的 Name_CN 陣列；若來源是字串也轉成陣列方便後續比對。
+    function getNameList(item) {
+      const rawName = item && item.Name_CN;
+      if (Array.isArray(rawName)) {
+        return rawName.map((value) => String(value).trim()).filter(Boolean);
+      }
+      const textName = String(rawName || "").trim();
+      return textName ? [textName] : [];
+    }
+
+    // 中文註解：從瀏覽器提供的資料夾相對路徑中移除第一層根目錄，方便比對同資料夾下的 Picture 與 JSON。
+    function getFolderRelativePath(file) {
+      const rawPath = file.webkitRelativePath || file.name;
+      const pathParts = rawPath.split("/");
+      return pathParts.length > 1 ? pathParts.slice(1).join("/") : rawPath;
+    }
+
+    // 中文註解：建立圖片檔索引，輸入是資料夾內所有檔案，輸出是小寫相對路徑到 File 物件的 Map。
+    function buildImageFileMap(files) {
+      const imageFileMap = new Map();
+      files.forEach((file) => {
+        const relativePath = getFolderRelativePath(file).replaceAll("\\", "/").toLowerCase();
+        if (relativePath.startsWith("picture/site/") || relativePath.startsWith("picture/pin/")) {
+          imageFileMap.set(relativePath, file);
+        }
+      });
+      return imageFileMap;
+    }
+
+
+
+    // 中文註解：判斷 JSON 是否為 extract_compe_plugs_gui.py 輸出的名稱對應檔。
+    function isCompeJsonFile(file) {
+      return file.name.toLowerCase().endsWith(".json") && file.name.toLowerCase().includes("_compe_plugs");
+    }
+
+    // 中文註解：找出資料夾內所有名稱對應 JSON，若有多個會提供下拉選單切換。
+    function findCompeJsonFiles(files) {
+      return files
+        .filter(isCompeJsonFile)
+        .sort((leftFile, rightFile) => getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile)));
+    }
+
+    // 中文註解：判斷 JSON 是否較像主要資料檔；排序時讓 index 與輔助 JSON 排在後面，降低誤選機率。
+    function isLikelyMainJson(file) {
+      const fileName = file.name.toLowerCase();
+      return fileName !== "index.json" && !fileName.includes("_compe_plugs");
+    }
+
+    // 中文註解：找出資料夾內所有 JSON，並將主要候選檔排在前面，供自動載入與下拉選擇使用。
+    function findJsonFiles(files) {
+      return files
+        .filter((file) => file.name.toLowerCase().endsWith(".json") && !isCompeJsonFile(file))
+        .sort((leftFile, rightFile) => {
+          const leftPriority = isLikelyMainJson(leftFile) ? 0 : 1;
+          const rightPriority = isLikelyMainJson(rightFile) ? 0 : 1;
+          if (leftPriority !== rightPriority) {
+            return leftPriority - rightPriority;
+          }
+          return getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile));
+        });
+    }
+
+    // 中文註解：依 FileID 去除重複圖片資料；保留第一筆，避免同一張圖在列表中重複顯示。
+    function uniqueByFileId(items) {
+      const usedFileIds = new Set();
+      return items.filter((item) => {
+        const fileId = String(item && item.FileID ? item.FileID : "").trim();
+        if (!fileId) {
+          return true;
+        }
+
+        if (usedFileIds.has(fileId)) {
+          return false;
+        }
+
+        usedFileIds.add(fileId);
+        return true;
+      });
+    }
+
+    // 中文註解：讀取原始 JSON 後建立畫面要用的資料；圖片清單同時會過濾 _note 並依 FileID 去重。
+    function buildFilteredData(data) {
+      const pictureListSite = getList(data, "PictureList_site").filter((item) => !isMissingFileNote(item));
+      const pictureListPin = getList(data, "PictureList_pin").filter((item) => !isMissingFileNote(item));
+
+      return {
+        ProjectList: getList(data, "ProjectList").filter((item) => !isMissingFileNote(item)),
+        PictureList_site: uniqueByFileId(pictureListSite),
+        PictureList_pin: uniqueByFileId(pictureListPin),
+      };
+    }
+
+    // 中文註解：依目前 tab 判斷圖片所在資料夾；ProjectList 不需要圖片欄位所以回傳空字串。
+    function getPictureFolderName(tabName) {
+      if (tabName === "PictureList_site") {
+        return "site";
+      }
+
+      if (tabName === "PictureList_pin") {
+        return "pin";
+      }
+
+      return "";
+    }
+
+    // 中文註解：依 PictureList 資料的 FileID 組出相對圖片路徑，用於查找資料夾檔案索引。
+    function getPictureRelativePath(tabName, rowItem) {
+      const folderName = getPictureFolderName(tabName);
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+
+      if (!folderName || !fileId) {
+        return "";
+      }
+
+      return `picture/${folderName}/${fileId}.png`;
+    }
+
+    // 中文註解：確認指定 PictureList 資料是否已在選取資料夾中找到對應圖片。
+    function hasPictureFile(tabName, rowItem) {
+      const picturePath = getPictureRelativePath(tabName, rowItem);
+      return picturePath ? appState.imageFileMap.has(picturePath) : false;
+    }
+
+    // 中文註解：將儲存格內容轉成可閱讀文字；陣列欄位用逗號串接，物件則保留 JSON 格式方便檢查。
+    function formatCellValue(value) {
+      if (Array.isArray(value)) {
+        return value.join(", ");
+      }
+
+      if (value && typeof value === "object") {
+        return JSON.stringify(value);
+      }
+
+      return value === undefined || value === null ? "" : String(value);
+    }
+
+    // 中文註解：避免 JSON 內容直接塞入 HTML 時破壞標籤或造成不必要的腳本執行風險。
+    function escapeHtml(value) {
+      return formatCellValue(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+
+
+    // 中文註解：從 Site 的 Name_CN 取得查找 key；優先用不含 * 的值，若沒有才改用含 * 的原始值。
+    function getSiteLookupKeys(siteItem) {
+      const originalNames = getNameList(siteItem);
+      const nonPlugKeys = originalNames.filter((name) => !name.includes("*"));
+      return nonPlugKeys.length > 0 ? nonPlugKeys : originalNames;
+    }
+
+    // 中文註解：使用 _compe_plugs.json 將 key 轉為中文名稱；查不到時顯示該筆 PictureList_site 的原始 Name_CN。
+    function resolveComponentNames(siteItem) {
+      const keys = getSiteLookupKeys(siteItem);
+      const originalNames = getNameList(siteItem);
+      const resolvedNames = [];
+      keys.forEach((key) => {
+        const matchItems = Array.isArray(appState.compeData[key]) ? appState.compeData[key] : [];
+        matchItems.forEach((matchItem) => {
+          const name = String(matchItem && matchItem.name ? matchItem.name : "").trim();
+          if (name && !resolvedNames.includes(name)) resolvedNames.push(name);
+        });
+      });
+      return resolvedNames.length > 0 ? resolvedNames.join(" / ") : (originalNames.join(" / ") || "未命名項目");
+    }
+
+    // 中文註解：依原始 Name_CN 值去 PictureList_pin 內找第一筆對應資料，供右側列表顯示 icon。
+    function findPinItemByName(nameText) {
+      return appState.filteredData.PictureList_pin.find((pinItem) => getNameList(pinItem).includes(nameText)) || null;
+    }
+
+    // 中文註解：Pin 圖片一律從 Picture/Pin 查找，用於右側滑出面板。
+    function getPinPictureRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `picture/pin/${fileId}.png` : "";
+    }
+
+    // 中文註解：依元件 key 對應 PictureList_site；輸入為 _compe_plugs 的 key，輸出為第一筆對應 Site 圖資料。
+    function findSiteItemByComponentKey(componentKey) {
+      return appState.filteredData.PictureList_site.find((siteItem) => getNameList(siteItem).includes(componentKey)) || null;
+    }
+
+    // 中文註解：確認 plug 名稱是否完全相等存在於 PictureList_site 的 Name_CN 清單。
+    function hasMatchingSiteNameForPlug(plugName) {
+      const targetPlugName = String(plugName || "").trim();
+      if (!targetPlugName) return false;
+      return appState.filteredData.PictureList_site.some((siteItem) => getNameList(siteItem).includes(targetPlugName));
+    }
+
+    // 中文註解：建立第 5 分頁可顯示的元件清單；以 key.name 合併重複名稱，plugList 也同步合併去重。
+    function buildComponentCompareItems() {
+      const excludedNames = new Set(["中繼接頭", "節點"]);
+      const itemMap = new Map();
+      Object.keys(appState.compeData || {}).sort().forEach((componentKey) => {
+        const siteItem = findSiteItemByComponentKey(componentKey);
+        if (!siteItem) return;
+
+        const groupItems = Array.isArray(appState.compeData[componentKey]) ? appState.compeData[componentKey] : [];
+        groupItems.forEach((groupItem) => {
+          const componentName = String(groupItem && groupItem.name ? groupItem.name : "").trim();
+          if (!componentName || excludedNames.has(componentName)) return;
+
+          const displayName = `${componentKey}.${componentName}`;
+          const mapKey = displayName;
+          const targetItem = itemMap.get(mapKey) || { key: componentKey, name: componentName, displayName, plugList: [], siteItem };
+          const plugList = Array.isArray(groupItem.plugList) ? groupItem.plugList.map((plugName) => String(plugName).trim()).filter(Boolean) : [];
+          plugList.forEach((plugName) => {
+            if (!targetItem.plugList.includes(plugName)) targetItem.plugList.push(plugName);
+          });
+          itemMap.set(mapKey, targetItem);
+        });
+      });
+      return Array.from(itemMap.values());
+    }
+    // 中文註解：產生圖片查看按鈕，按鈕會記錄列索引，點擊時再取回對應資料與圖片檔。
+    function renderPictureButton(rowIndex, hasImage) {
+      const disabledText = hasImage ? "" : " disabled";
+      const titleText = hasImage ? "查看圖片" : "找不到對應圖片";
+      return `<td class="image-column"><button class="image-button" type="button" data-row-index="${rowIndex}" title="${titleText}"${disabledText}>圖</button></td>`;
+    }
+
+    // 中文註解：依目前 tab 的資料產生表格；若沒有資料，顯示空狀態而不是空白畫面。
+    function renderActiveTable() {
+      const currentRows = appState.filteredData[appState.activeTab] || [];
+      const currentColumns = tableColumns[appState.activeTab] || [];
+
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "尚未載入資料。";
+        return;
+      }
+
+      if (currentRows.length === 0) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = `${appState.activeTab} 沒有可顯示的資料。`;
+        return;
+      }
+
+      const isPictureTab = appState.activeTab === "PictureList_site" || appState.activeTab === "PictureList_pin";
+      const imageHeader = isPictureTab ? '<th class="image-column">圖片</th>' : "";
+      const tableHead = imageHeader + currentColumns.map((columnName) => `<th>${escapeHtml(columnName)}</th>`).join("");
+      const tableBody = currentRows.map((rowItem, rowIndex) => {
+        const imageCell = isPictureTab ? renderPictureButton(rowIndex, hasPictureFile(appState.activeTab, rowItem)) : "";
+        const cells = currentColumns.map((columnName) => `<td>${escapeHtml(rowItem[columnName])}</td>`).join("");
+        return `<tr>${imageCell}${cells}</tr>`;
+      }).join("");
+
+      tableContainer.className = "table-wrap";
+      tableContainer.innerHTML = `
+        <table>
+          <thead><tr>${tableHead}</tr></thead>
+          <tbody>${tableBody}</tbody>
+        </table>
+      `;
+    }
+
+
+
+    // 中文註解：渲染第四個 Site 對應圖 tab，左側顯示 site 圖，右側顯示原始 Name_CN 與 pin 圖入口。
+    function renderCompareTab() {
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "尚未載入資料。";
+        return;
+      }
+
+      const siteItems = appState.filteredData.PictureList_site;
+      if (siteItems.length === 0) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "PictureList_site 沒有可顯示的資料。";
+        return;
+      }
+
+      if (appState.selectedSiteIndex >= siteItems.length) appState.selectedSiteIndex = 0;
+      const selectedSiteItem = siteItems[appState.selectedSiteIndex];
+      const selectedNames = getNameList(selectedSiteItem);
+      const selectedSiteFileId = String(selectedSiteItem && selectedSiteItem.FileID ? selectedSiteItem.FileID : "未提供").trim() || "未提供";
+      const sitePath = getPictureRelativePath("PictureList_site", selectedSiteItem);
+      const siteFile = appState.imageFileMap.get(sitePath);
+      const siteImageHtml = siteFile
+        ? `<img src="${URL.createObjectURL(siteFile)}" alt="${escapeHtml(sitePath)}">`
+        : `<div class="empty-state">找不到 Site 圖片：${escapeHtml(sitePath)}</div>`;
+      const optionsHtml = siteItems.map((siteItem, index) => {
+        const label = resolveComponentNames(siteItem);
+        const selectedText = index === appState.selectedSiteIndex ? " selected" : "";
+        return `<option value="${index}"${selectedText}>${escapeHtml(label)}</option>`;
+      }).join("");
+      const nameListHtml = selectedNames.map((nameText) => {
+        const pinItem = findPinItemByName(nameText);
+        const pinPath = pinItem ? getPinPictureRelativePath(pinItem) : "";
+        const hasPinImage = pinPath ? appState.imageFileMap.has(pinPath) : false;
+        const buttonHtml = pinItem
+          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" title="查看 Pin 圖"${hasPinImage ? "" : " disabled"}>圖</button>`
+          : "";
+        return `<li class="raw-name-item"><span class="raw-name-text">${escapeHtml(nameText)}</span>${buttonHtml}</li>`;
+      }).join("");
+
+      tableContainer.className = "compare-layout";
+      tableContainer.innerHTML = `
+        <section class="compare-left">
+          <div class="site-toolbar">
+            <label for="siteCompareSelect">PictureList_site 對應中文名稱</label>
+            <select id="siteCompareSelect" class="site-select">${optionsHtml}</select>
+          </div>
+          <div class="site-image-wrap">
+            <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+            <div class="site-image-body">${siteImageHtml}</div>
+          </div>
+        </section>
+        <section class="compare-right">
+          <p class="pin-list-title">Name_CN 原始值</p>
+          <ul class="raw-name-list">${nameListHtml || '<li class="raw-name-item"><span class="raw-name-text">沒有 Name_CN 資料</span></li>'}</ul>
+        </section>
+        <aside id="pinDrawer" class="pin-drawer" aria-label="Pin 圖片預覽">
+          <div class="pin-drawer-header">
+            <p id="pinDrawerTitle" class="pin-drawer-title">Pin 圖片</p>
+            <button id="pinDrawerClose" class="drawer-close" type="button" aria-label="關閉">×</button>
+          </div>
+          <div id="pinDrawerBody" class="pin-drawer-body"></div>
+        </aside>
+      `;
+    }
+
+    // 中文註解：渲染第 5 個元件對應圖 tab，左側為可搜尋元件列表與 Site 圖，右側為該元件 plugList。
+    function renderComponentCompareTab() {
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "尚未載入資料。";
+        return;
+      }
+
+      const allComponentItems = buildComponentCompareItems();
+      if (allComponentItems.length === 0) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "沒有可對應 PictureList_site 的元件資料，或尚未載入名稱 JSON。";
+        return;
+      }
+
+      const keyword = appState.componentSearchKeyword.trim().toLowerCase();
+      const componentItems = allComponentItems.filter((componentItem) => {
+        if (!keyword) return true;
+        const plugText = componentItem.plugList.join(" ").toLowerCase();
+        return componentItem.displayName.toLowerCase().includes(keyword) || plugText.includes(keyword);
+      });
+
+      if (componentItems.length === 0) {
+        tableContainer.className = "compare-layout";
+        tableContainer.innerHTML = `
+          <section class="compare-left component-left">
+            <div class="component-main">
+              <div class="component-list-panel">
+                <div class="component-search-wrap">
+                  <input id="componentSearchInput" class="component-search-input" type="search" value="${escapeHtml(appState.componentSearchKeyword)}" placeholder="搜尋元件或 plugList">
+                </div>
+                <ul class="component-list"><li class="raw-name-item"><span class="raw-name-text">沒有符合的元件</span></li></ul>
+              </div>
+              <div class="component-image-panel"><div class="empty-state">請調整搜尋條件。</div></div>
+            </div>
+          </section>
+          <section class="compare-right"><p class="pin-list-title">插頭圖清單</p><ul class="raw-name-list"><li class="raw-name-item"><span class="raw-name-text">沒有插頭圖清單資料</span></li></ul></section>
+        `;
+        return;
+      }
+
+      const selectedKey = allComponentItems[appState.selectedComponentIndex] ? allComponentItems[appState.selectedComponentIndex].displayName : "";
+      let selectedFilteredIndex = componentItems.findIndex((componentItem) => componentItem.displayName === selectedKey);
+      if (selectedFilteredIndex < 0) {
+        selectedFilteredIndex = 0;
+        appState.selectedComponentIndex = allComponentItems.findIndex((componentItem) => componentItem.displayName === componentItems[0].displayName);
+      }
+
+      const selectedComponent = componentItems[selectedFilteredIndex];
+      const sitePath = getPictureRelativePath("PictureList_site", selectedComponent.siteItem);
+      const siteFile = appState.imageFileMap.get(sitePath);
+      const selectedSiteFileId = String(selectedComponent.siteItem && selectedComponent.siteItem.FileID ? selectedComponent.siteItem.FileID : "未提供").trim() || "未提供";
+      const siteImageHtml = siteFile
+        ? `<img src="${URL.createObjectURL(siteFile)}" alt="${escapeHtml(sitePath)}">`
+        : `<div class="empty-state">找不到 Site 圖片：${escapeHtml(sitePath)}</div>`;
+      const componentListHtml = componentItems.map((componentItem) => {
+        const originalIndex = allComponentItems.findIndex((originalItem) => originalItem.displayName === componentItem.displayName);
+        const activeClass = componentItem.displayName === selectedComponent.displayName ? " active" : "";
+        return `<li><button class="component-list-item${activeClass}" type="button" data-component-index="${originalIndex}">${escapeHtml(componentItem.displayName)}</button></li>`;
+      }).join("");
+      const matchedPlugList = selectedComponent.plugList.filter(hasMatchingSiteNameForPlug);
+      const plugListHtml = matchedPlugList.map((plugName) => {
+        const pinItem = findPinItemByName(plugName);
+        const pinPath = pinItem ? getPinPictureRelativePath(pinItem) : "";
+        const hasPinImage = pinPath ? appState.imageFileMap.has(pinPath) : false;
+        const disabledAttribute = hasPinImage ? "" : " disabled";
+        const buttonHtml = pinItem
+          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" title="查看 Pin 圖"${disabledAttribute}>圖</button>`
+          : "";
+        return `<li class="raw-name-item"><span class="raw-name-text">${escapeHtml(selectedComponent.displayName)}（${escapeHtml(plugName)}）</span>${buttonHtml}</li>`;
+      }).join("");
+
+      tableContainer.className = "compare-layout";
+      tableContainer.innerHTML = `
+        <section class="compare-left component-left">
+          <div class="component-main">
+            <div class="component-list-panel">
+              <div class="component-search-wrap">
+                <input id="componentSearchInput" class="component-search-input" type="search" value="${escapeHtml(appState.componentSearchKeyword)}" placeholder="搜尋元件或 plugList">
+              </div>
+              <ul class="component-list">${componentListHtml}</ul>
+            </div>
+            <div class="component-image-panel">
+              <div class="site-image-wrap">
+                <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+                <div class="site-image-body">${siteImageHtml}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="compare-right">
+          <p class="pin-list-title">${escapeHtml(selectedComponent.displayName)} 插頭圖清單</p>
+          <ul class="raw-name-list">${plugListHtml || '<li class="raw-name-item"><span class="raw-name-text">沒有插頭圖清單資料</span></li>'}</ul>
+        </section>
+        <aside id="pinDrawer" class="pin-drawer" aria-label="Pin 圖片預覽">
+          <div class="pin-drawer-header">
+            <p id="pinDrawerTitle" class="pin-drawer-title">Pin 圖片</p>
+            <button id="pinDrawerClose" class="drawer-close" type="button" aria-label="關閉">×</button>
+          </div>
+          <div id="pinDrawerBody" class="pin-drawer-body"></div>
+        </aside>
+      `;
+
+      const componentList = tableContainer.querySelector(".component-list");
+      if (componentList) componentList.scrollTop = appState.componentListScrollTop;
+    }
+    // 中文註解：依目前 tab 決定渲染一般表格或第四個對應圖畫面。
+    function renderActiveView() {
+      const contentPanel = document.getElementById("content");
+      if (contentPanel) contentPanel.classList.toggle("compare-content", appState.activeTab === "SiteCompare" || appState.activeTab === "ComponentCompare");
+      if (appState.activeTab === "SiteCompare") renderCompareTab();
+      else if (appState.activeTab === "ComponentCompare") renderComponentCompareTab();
+      else renderActiveTable();
+    }
+
+    // 中文註解：更新檔案載入摘要，讓使用者知道各清單過濾與去重後剩下多少筆資料。
+    function renderSummary(fileName) {
+      const projectCount = appState.filteredData.ProjectList.length;
+      const siteCount = appState.filteredData.PictureList_site.length;
+      const pinCount = appState.filteredData.PictureList_pin.length;
+      const imageCount = appState.imageFileMap.size;
+      const jsonCount = appState.jsonFiles.length;
+      const compeName = appState.currentCompeFile ? getFolderRelativePath(appState.currentCompeFile) : "未載入名稱 JSON";
+      summaryElement.textContent = `已載入 ${fileName}：ProjectList ${projectCount} 筆，PictureList_site ${siteCount} 筆，PictureList_pin ${pinCount} 筆，圖片索引 ${imageCount} 個，JSON ${jsonCount} 個，名稱對應：${compeName}。`;
+      summaryElement.classList.remove("error");
+    }
+
+    // 中文註解：切換 tab 時更新按鈕樣式並重新繪製對應清單。
+    function switchTab(tabName) {
+      appState.activeTab = tabName;
+      tabButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === tabName);
+      });
+      renderActiveView();
+    }
+
+    // 中文註解：釋放前一次預覽圖片建立的暫存網址，避免長時間使用後佔用記憶體。
+    function revokeCurrentImageUrl() {
+      if (appState.currentImageUrl) {
+        URL.revokeObjectURL(appState.currentImageUrl);
+        appState.currentImageUrl = "";
+      }
+    }
+
+
+
+    // 中文註解：釋放右側滑出 pin 圖片網址，避免切換不同 pin 時佔用記憶體。
+    function revokeCurrentPinDrawerUrl() {
+      if (appState.currentPinDrawerUrl) {
+        URL.revokeObjectURL(appState.currentPinDrawerUrl);
+        appState.currentPinDrawerUrl = "";
+      }
+    }
+
+    // 中文註解：開啟圖片 dialog；輸入為目前列資料，輸出為使用者可檢視的圖片預覽。
+    function openImageDialog(rowItem) {
+      const picturePath = getPictureRelativePath(appState.activeTab, rowItem);
+      const imageFile = appState.imageFileMap.get(picturePath);
+
+      revokeCurrentImageUrl();
+      dialogTitle.textContent = `圖片預覽：${picturePath || "無檔案路徑"}`;
+
+      if (!imageFile) {
+        dialogBody.innerHTML = `<div class="empty-state">找不到對應圖片：${escapeHtml(picturePath || "FileID 空白")}</div>`;
+        imageDialog.showModal();
+        return;
+      }
+
+      appState.currentImageUrl = URL.createObjectURL(imageFile);
+      dialogBody.innerHTML = `<img src="${appState.currentImageUrl}" alt="${escapeHtml(picturePath)}">`;
+      imageDialog.showModal();
+    }
+
+
+
+    // 中文註解：開啟第四個 tab 的右側滑出 pin 圖片面板。
+    function openPinDrawer(pinItem) {
+      const pinDrawer = document.getElementById("pinDrawer");
+      const pinDrawerTitle = document.getElementById("pinDrawerTitle");
+      const pinDrawerBody = document.getElementById("pinDrawerBody");
+      if (!pinDrawer || !pinDrawerTitle || !pinDrawerBody) return;
+
+      const pinPath = getPinPictureRelativePath(pinItem);
+      const pinFile = appState.imageFileMap.get(pinPath);
+      revokeCurrentPinDrawerUrl();
+      pinDrawerTitle.textContent = `Pin 圖片：${pinPath || "無檔案路徑"}`;
+      if (!pinFile) {
+        pinDrawerBody.innerHTML = `<div class="empty-state">找不到 Pin 圖片：${escapeHtml(pinPath || "FileID 空白")}</div>`;
+      } else {
+        appState.currentPinDrawerUrl = URL.createObjectURL(pinFile);
+        pinDrawerBody.innerHTML = `<img src="${appState.currentPinDrawerUrl}" alt="${escapeHtml(pinPath)}">`;
+      }
+      pinDrawer.classList.add("open");
+    }
+
+    // 中文註解：關閉第四個 tab 的右側滑出面板並釋放圖片網址。
+    function closePinDrawer() {
+      const pinDrawer = document.getElementById("pinDrawer");
+      if (pinDrawer) pinDrawer.classList.remove("open");
+      revokeCurrentPinDrawerUrl();
+    }
+
+    // 中文註解：處理表格內圖片按鈕點擊，透過列索引找到目前 tab 的原始資料。
+    function handleTableClick(event) {
+      const imageButton = event.target.closest(".image-button");
+      if (imageButton && !imageButton.disabled) {
+        const rowIndex = Number(imageButton.dataset.rowIndex);
+        const currentRows = appState.filteredData[appState.activeTab] || [];
+        const rowItem = currentRows[rowIndex];
+        if (rowItem) openImageDialog(rowItem);
+        return;
+      }
+
+      const componentButton = event.target.closest(".component-list-item");
+      if (componentButton) {
+        const componentList = tableContainer.querySelector(".component-list");
+        appState.componentListScrollTop = componentList ? componentList.scrollTop : 0;
+        appState.selectedComponentIndex = Number(componentButton.dataset.componentIndex);
+        closePinDrawer();
+        renderComponentCompareTab();
+        return;
+      }
+
+      const pinButton = event.target.closest(".pin-button");
+      if (pinButton && !pinButton.disabled) {
+        const pinItem = appState.filteredData.PictureList_pin.find((item) => String(item.FileID) === String(pinButton.dataset.pinFileId));
+        if (pinItem) openPinDrawer(pinItem);
+        return;
+      }
+
+      if (event.target.closest("#pinDrawerClose")) {
+        closePinDrawer();
+      }
+    }
+
+    // 中文註解：處理第 5 分頁左側關鍵字搜尋；debounce 後重繪，並在下一幀安全還原焦點與游標。
+    function handleTableInput(event) {
+      if (event.target.id === "componentSearchInput") {
+        const cursorStart = event.target.selectionStart;
+        const cursorEnd = event.target.selectionEnd;
+        appState.componentSearchKeyword = event.target.value;
+        appState.componentListScrollTop = 0;
+        closePinDrawer();
+
+        if (appState.componentSearchTimer) {
+          clearTimeout(appState.componentSearchTimer);
+        }
+
+        appState.componentSearchTimer = setTimeout(() => {
+          appState.componentSearchTimer = null;
+          renderComponentCompareTab();
+          requestAnimationFrame(() => {
+            const searchInput = document.getElementById("componentSearchInput");
+            if (!searchInput) return;
+            searchInput.focus();
+            if (typeof cursorStart === "number" && typeof cursorEnd === "number") {
+              searchInput.setSelectionRange(cursorStart, cursorEnd);
+            }
+          });
+        }, 120);
+      }
+    }
+    // 中文註解：處理第四個 tab 的 Site 選單切換，更新左側圖片與右側 Name_CN 清單。
+    function handleTableChange(event) {
+      if (event.target.id === "siteCompareSelect") {
+        appState.selectedSiteIndex = Number(event.target.value);
+        closePinDrawer();
+        renderCompareTab();
+      }
+    }
+
+    // 中文註解：更新 JSON 下拉選單；多個 JSON 時讓使用者可切換，單一 JSON 時仍保留目前自動載入流程。
+    function renderJsonSelect() {
+      jsonSelect.innerHTML = appState.jsonFiles.map((file, index) => {
+        const relativePath = getFolderRelativePath(file);
+        const label = isLikelyMainJson(file) ? relativePath : `${relativePath}（輔助）`;
+        return `<option value="${index}">${escapeHtml(label)}</option>`;
+      }).join("");
+
+      jsonPicker.classList.toggle("hidden", appState.jsonFiles.length <= 1);
+    }
+
+
+
+    // 中文註解：更新名稱 JSON 下拉選單；多個 _compe_plugs.json 時讓使用者可切換來源。
+    function renderCompeSelect() {
+      compeSelect.innerHTML = appState.compeFiles.map((file, index) => `<option value="${index}">${escapeHtml(getFolderRelativePath(file))}</option>`).join("");
+      compePicker.classList.toggle("hidden", appState.compeFiles.length <= 1);
+    }
+
+    // 中文註解：讀取名稱對應 JSON；失敗時保留空物件，第四 tab 會退回顯示原始 key。
+    function loadCompeFile(compeFile) {
+      if (!compeFile) {
+        appState.compeData = {};
+        appState.currentCompeFile = null;
+        renderActiveView();
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          appState.compeData = JSON.parse(reader.result);
+          appState.currentCompeFile = compeFile;
+        } catch (error) {
+          appState.compeData = {};
+          appState.currentCompeFile = null;
+          summaryElement.textContent = `無法解析名稱 JSON ${getFolderRelativePath(compeFile)}：${error.message}`;
+          summaryElement.classList.add("error");
+        }
+        if (appState.currentJsonFile) renderSummary(getFolderRelativePath(appState.currentJsonFile));
+        renderActiveView();
+      };
+      reader.readAsText(compeFile, "utf-8");
+    }
+
+    // 中文註解：讀取指定 JSON 檔，解析成功後更新畫面資料；輸入是 File 物件，輸出是目前表格畫面。
+    function loadJsonFile(jsonFile) {
+      if (!jsonFile) {
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        try {
+          const parsedData = JSON.parse(reader.result);
+          appState.rawData = parsedData;
+          appState.currentJsonFile = jsonFile;
+          appState.selectedSiteIndex = 0;
+          appState.selectedComponentIndex = 0;
+          appState.componentSearchKeyword = "";
+          appState.componentListScrollTop = 0;
+          closePinDrawer();
+          appState.filteredData = buildFilteredData(parsedData);
+          renderSummary(getFolderRelativePath(jsonFile));
+          renderActiveView();
+        } catch (error) {
+          appState.rawData = null;
+          appState.currentJsonFile = null;
+          tableContainer.className = "empty-state";
+          tableContainer.textContent = "JSON 格式錯誤，請確認檔案內容。";
+          summaryElement.textContent = `無法解析 ${getFolderRelativePath(jsonFile)}：${error.message}`;
+          summaryElement.classList.add("error");
+        }
+      };
+
+      reader.readAsText(jsonFile, "utf-8");
+    }
+
+    // 中文註解：處理資料夾選取；建立圖片索引與 JSON 清單，並自動載入排序後第一個 JSON。
+    function handleFolderChange(event) {
+      const selectedFiles = Array.from(event.target.files || []);
+      appState.folderFiles = selectedFiles;
+      appState.jsonFiles = findJsonFiles(selectedFiles);
+      appState.compeFiles = findCompeJsonFiles(selectedFiles);
+      appState.imageFileMap = buildImageFileMap(selectedFiles);
+      appState.rawData = null;
+      appState.compeData = {};
+      appState.currentJsonFile = null;
+      appState.currentCompeFile = null;
+      appState.selectedSiteIndex = 0;
+      appState.selectedComponentIndex = 0;
+      appState.componentSearchKeyword = "";
+      appState.componentListScrollTop = 0;
+      appState.filteredData = buildFilteredData({});
+      closePinDrawer();
+      renderJsonSelect();
+      renderCompeSelect();
+
+      if (appState.compeFiles.length > 0) {
+        compeSelect.value = "0";
+        loadCompeFile(appState.compeFiles[0]);
+      }
+
+      if (appState.jsonFiles.length === 0) {
+        tableContainer.className = "empty-state";
+        tableContainer.textContent = "找不到 JSON 檔案，請選擇 parse_ssp_xml_gui.py 輸出的資料夾。";
+        summaryElement.textContent = "資料夾內沒有可用的 JSON 檔案。";
+        summaryElement.classList.add("error");
+        return;
+      }
+
+      jsonSelect.value = "0";
+      loadJsonFile(appState.jsonFiles[0]);
+    }
+
+    // 中文註解：處理下拉選單切換 JSON；圖片根目錄仍沿用同一個已選資料夾。
+    function handleJsonSelectChange(event) {
+      const selectedIndex = Number(event.target.value);
+      const selectedJsonFile = appState.jsonFiles[selectedIndex];
+      loadJsonFile(selectedJsonFile);
+    }
+
+
+
+    // 中文註解：處理名稱 JSON 下拉切換；重新解析名稱後刷新第四 tab 標籤。
+    function handleCompeSelectChange(event) {
+      const selectedIndex = Number(event.target.value);
+      loadCompeFile(appState.compeFiles[selectedIndex]);
+    }
+
+    topToggleButton.addEventListener("click", toggleTopPanel);
+    folderInput.addEventListener("change", handleFolderChange);
+    jsonSelect.addEventListener("change", handleJsonSelectChange);
+    compeSelect.addEventListener("change", handleCompeSelectChange);
+    tableContainer.addEventListener("click", handleTableClick);
+    tableContainer.addEventListener("change", handleTableChange);
+    tableContainer.addEventListener("input", handleTableInput);
+    dialogCloseButton.addEventListener("click", () => imageDialog.close());
+    imageDialog.addEventListener("close", revokeCurrentImageUrl);
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => switchTab(button.dataset.tab));
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMW 維修手冊 XML 檢視器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft JhengHei', 'Microsoft YaHei', Arial, sans-serif;
+      background: #cccccc;
+      color: #1a4070;
+    }
+
+    #toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 8px 16px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    #toolbar label {
+      cursor: pointer;
+      background: #1e6dc0;
+      color: white;
+      padding: 5px 14px;
+      border-radius: 3px;
+      font-size: 14px;
+      white-space: nowrap;
+      user-select: none;
+
+    }
+
+    #toolbar label:hover {
+      background: #1558a0;
+    }
+
+    #toolbar input[type="file"] {
+      display: none;
+    }
+
+    #filename {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .xml-list {
+      margin: 4px 0 4px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .xml-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .xml-list-label {
+      flex: 0 0 auto;
+      min-width: 14px;
+      color: #1a4070;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: bold;
+    }
+
+    .xml-list-body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .xml-list-body p {
+      margin: 0;
+    }
+
+    .xml-list-body p+p {
+      margin-top: 4px;
+    }
+
+    .doc-title {
+      background: linear-gradient(to bottom, #3a8ee8, #1a6dcc);
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    #content {
+      margin: 0 20px 30px 20px;
+      padding: 0;
+      background: white;
+      border-radius: 6px;
+      overflow: auto;
+    }
+
+    #inner-content {
+      padding: 20px;
+      padding-top: 0;
+    }
+
+    .repair-doc {
+      padding: 16px 20px 20px 20px;
+    }
+
+    .repair-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #2f5d95;
+    }
+
+    .repair-meta span {
+      background: #eaf2fb;
+      border: 1px solid #c5d7ee;
+      border-radius: 999px;
+      padding: 2px 10px;
+    }
+
+    .repair-process {
+      margin-top: 14px;
+    }
+
+    .repair-step {
+      border-top: 1px solid #d7e2ef;
+      padding: 14px 0;
+    }
+
+    .repair-step:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .repair-step-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #1a4070;
+    }
+
+    .repair-step-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #1e6dc0;
+      color: white;
+      font-size: 13px;
+    }
+
+    .repair-hint {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #1e6dc0;
+      background: #f5f9ff;
+      border-radius: 4px;
+    }
+
+    .repair-hint.attention {
+      border-left-color: #d18b00;
+      background: #fff8eb;
+    }
+
+    .repair-hint-title {
+      margin: 0 0 4px 0;
+      font-weight: bold;
+    }
+
+    .hotspot {
+      color: #0f5ca8;
+      text-decoration: underline;
+      cursor: help;
+      font-weight: 600;
+    }
+
+    section.intro,
+    section.chapter,
+    section.subsection {
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      font-size: 15px;
+      color: #1a4070;
+      margin: 14px 0 6px 0;
+      font-weight: bold;
+    }
+
+    p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #1a4070;
+      line-height: 1.6;
+    }
+
+    ul {
+      margin: 4px 0 4px 20px;
+      padding: 0;
+    }
+
+    ul li {
+      font-size: 14px;
+      color: #1a4070;
+      margin: 2px 0;
+      line-height: 1.6;
+    }
+
+    ul.dash {
+      list-style-type: none;
+      padding-left: 4px;
+    }
+
+    ul.dash li::before {
+      content: "\2013 ";
+    }
+
+    .graphic-placeholder {
+      border: 1px dashed #aaa;
+      background: #f5f5f5;
+      color: #888;
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      margin: 8px 0;
+      font-style: italic;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    table th {
+      border: 1px solid #999;
+      padding: 5px 8px;
+      background: #d8e8f8;
+      color: #1a4070;
+      text-align: left;
+      font-weight: bold;
+      vertical-align: bottom;
+    }
+
+    table tr.highlight-row>th,
+    table tr.highlight-row>td {
+      background: #298cff;
+      color: #fff;
+    }
+
+    table td {
+      border: 1px solid #bbb;
+      padding: 5px 8px;
+      color: #1a4070;
+      vertical-align: top;
+    }
+
+    table th p,
+    table td p {
+      margin: 0;
+    }
+
+    #placeholder {
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toolbar">
+    <label for="fileInput">選擇 XML 檔案</label>
+    <input type="file" id="fileInput" accept=".xml">
+    <span id="filename">尚未選擇檔案</span>
+  </div>
+  <div id="content">
+    <div id="placeholder">請點擊上方按鈕，選擇 Document 資料夾下的 XML 檔案</div>
+  </div>
+  <script>
+    var fileInput = document.getElementById('fileInput');
+    var filenameEl = document.getElementById('filename');
+    var contentEl = document.getElementById('content');
+
+    function getQueryParam(name) {
+      var params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    function getStoredXmlPayload(storageKey) {
+      if (!storageKey) return null;
+
+      var raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
+    fileInput.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      loadFile(file);
+    });
+
+    async function loadFile(file) {
+      filenameEl.textContent = file.name;
+      try {
+        var xmlText = await readFileAsText(file);
+        loadXmlText(xmlText);
+      } catch (error) {
+        console.error(error);
+        showError('讀取檔案失敗');
+      }
+    }
+
+    function loadXmlText(xmlText) {
+      parseAndRender(xmlText);
+    }
+
+    function loadStoredXml(storageKey) {
+      var payload = getStoredXmlPayload(storageKey);
+      if (!payload || typeof payload.xmlText !== 'string' || !payload.xmlText) {
+        return false;
+      }
+
+      filenameEl.textContent = payload.fileName || 'source.xml';
+      loadXmlText(payload.xmlText);
+      return true;
+    }
+
+    function readFileAsText(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (ev) { resolve(ev.target.result); };
+        reader.onerror = reject;
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
+
+    function parseAndRender(xmlText) {
+      var parser = new DOMParser();
+      var xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      contentEl.innerHTML = '';
+      var parseError = xmlDoc.querySelector('parsererror');
+      if (parseError) {
+        showError('XML 解析錯誤');
+        return false;
+      }
+
+      var root = xmlDoc.documentElement;
+      if (!root) {
+        showError('找不到可渲染的根元素');
+        return false;
+      }
+
+      var funcDesc = findFirstElementByLocalTag(root, 'FUNCTIONALDESCRIPTION');
+      var repairDoc = findFirstElementByLocalTag(root, 'REPAIRMANUALDOCUMENT') || findFirstElementByLocalTag(root, 'REPAIRMANUALDOCUMENT_MOD');
+
+      if (funcDesc) {
+        renderFunctionalDocument(funcDesc, contentEl);
+        return true;
+      }
+
+      if (repairDoc) {
+        renderRepairDocument(repairDoc, contentEl);
+        return true;
+      }
+
+      showError('找不到可渲染的根元素');
+      return false;
+    }
+
+    var storageKey = getQueryParam('xmlStorageKey');
+    if (storageKey && loadStoredXml(storageKey)) {
+      fileInput.value = '';
+    }
+
+    function renderFunctionalDocument(funcDesc, content) {
+      var titleEl = getFirstChildElement(funcDesc, 'DOCUMENTTITLE');
+      if (titleEl) {
+        var titleDiv = document.createElement('div');
+        titleDiv.className = 'doc-title';
+        titleDiv.textContent = titleEl.textContent.trim();
+        content.appendChild(titleDiv);
+      }
+
+      var innerDiv = document.createElement('div');
+      innerDiv.id = 'inner-content';
+      content.appendChild(innerDiv);
+
+      var children = funcDesc.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType === 1) {
+          var tag = getLocalTagName(child);
+          if (tag === 'DOCUMENTTITLE' || tag === 'HEADING') continue;
+        }
+        renderNode(child, innerDiv);
+      }
+    }
+
+    function renderRepairDocument(repairDoc, content) {
+      var titleText = getFirstChildText(repairDoc, 'TITLE') || '維修流程';
+      var titleDiv = document.createElement('div');
+      titleDiv.className = 'doc-title';
+      titleDiv.textContent = titleText;
+      content.appendChild(titleDiv);
+
+      var innerDiv = document.createElement('div');
+      innerDiv.id = 'inner-content';
+      innerDiv.className = 'repair-doc';
+      content.appendChild(innerDiv);
+
+      var metaBits = [];
+      var awNumber = repairDoc.getAttribute('AWNUMBER');
+      var language = repairDoc.getAttribute('LANGUAGE');
+      if (awNumber) metaBits.push('AWNUMBER ' + awNumber);
+      if (language) metaBits.push(language);
+      if (metaBits.length) {
+        var metaDiv = document.createElement('div');
+        metaDiv.className = 'repair-meta';
+        var metaSpan = document.createElement('span');
+        metaSpan.textContent = metaBits.join(' · ');
+        metaDiv.appendChild(metaSpan);
+        innerDiv.appendChild(metaDiv);
+      }
+
+      var children = repairDoc.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType === 1 && getLocalTagName(child) === 'TITLE') continue;
+        renderRepairNode(child, innerDiv, { depth: 0 });
+      }
+    }
+
+    function renderRepairNode(node, container, context) {
+      if (node.nodeType === 3) {
+        if (node.textContent.trim()) container.appendChild(document.createTextNode(node.textContent));
+        return;
+      }
+
+      if (node.nodeType !== 1) return;
+
+      var tag = getLocalTagName(node);
+      switch (tag) {
+        case 'PROCESS':
+          renderRepairProcess(node, container, context || { depth: 0 });
+          break;
+        case 'INCLUDE_PROCESS':
+        case 'PREPROCESSES':
+        case 'HINTS':
+        case 'STEPS':
+        case 'INCLUDE_HINT':
+        case 'INCLUDE_WARNING':
+        case 'INCLUDE_DAMAGE':
+          renderChildren(node, container, renderRepairNode, context || { depth: 0 });
+          break;
+        case 'OPERATINGSTEP':
+          renderRepairStep(node, container, context || { depth: 0, stepIndex: 0 });
+          break;
+        case 'INSTRUCTION': {
+          var instructionDiv = document.createElement('div');
+          instructionDiv.className = 'repair-instruction';
+          renderChildren(node, instructionDiv, renderRepairNode, context || { depth: 0 });
+          container.appendChild(instructionDiv);
+          break;
+        }
+        case 'WARNING':
+        case 'DAMAGE':
+        case 'HINT':
+          renderRepairHint(node, container, context || { depth: 0 });
+          break;
+        case 'GRAPHIC':
+          container.appendChild(renderGraphicPlaceholder(node));
+          break;
+        case 'ILLUSTRATION': {
+          var figure = document.createElement('div');
+          figure.className = 'repair-illustration';
+          renderChildren(node, figure, renderRepairNode, context || { depth: 0 });
+          container.appendChild(figure);
+          break;
+        }
+        case 'HOTSPOT':
+          container.appendChild(renderHotspot(node));
+          break;
+        case 'TITLE':
+          if (node.textContent.trim()) {
+            var heading = document.createElement('h2');
+            heading.textContent = node.textContent.trim();
+            container.appendChild(heading);
+          }
+          break;
+        case 'PARAGRAPH': {
+          var p = document.createElement('p');
+          renderChildren(node, p, renderRepairNode, context || { depth: 0 });
+          container.appendChild(p);
+          break;
+        }
+        case 'TEXTFRAGMENT':
+        case 'SIMPLE_TEXTFRAGMENT':
+          renderChildren(node, container, renderRepairNode, context || { depth: 0 });
+          break;
+        case 'TYPE_OF_DANGER':
+        case 'CONSEQUENCES':
+        case 'PROTECTION':
+        case 'INFORMATION': {
+          var block = document.createElement('p');
+          renderChildren(node, block, renderRepairNode, context || { depth: 0 });
+          container.appendChild(block);
+          break;
+        }
+        case 'EMPHASIZE':
+        case 'EMPHASIZE1':
+        case 'EMPHASIZE2':
+        case 'EMPHASIZE3': {
+          var strong = document.createElement('strong');
+          renderChildren(node, strong, renderRepairNode, context || { depth: 0 });
+          container.appendChild(strong);
+          break;
+        }
+        case 'LIST':
+        case 'GENERALLIST':
+          container.appendChild(renderList(node));
+          break;
+        case 'LISTENTRY':
+        case 'LISTELEMENT':
+          container.appendChild(renderListItem(node));
+          break;
+        case 'LABEL': {
+          var labelSpan = document.createElement('span');
+          labelSpan.className = 'xml-list-label';
+          labelSpan.textContent = node.textContent.trim();
+          container.appendChild(labelSpan);
+          break;
+        }
+        case 'TABLE':
+          renderTable(node, container);
+          break;
+        default:
+          renderChildren(node, container, renderRepairNode, context || { depth: 0 });
+          break;
+      }
+    }
+
+    function renderRepairProcess(processNode, container, context) {
+      var processBlock = document.createElement('section');
+      processBlock.className = 'repair-process';
+      if (context && context.depth > 0) {
+        processBlock.classList.add('repair-process-nested');
+      }
+
+      var titleEl = getFirstChildElement(processNode, 'TITLE');
+      if (titleEl) {
+        var processTitle = document.createElement('h2');
+        processTitle.textContent = titleEl.textContent.trim();
+        processBlock.appendChild(processTitle);
+      }
+
+      var stepContext = {
+        depth: (context && context.depth ? context.depth + 1 : 1)
+      };
+      var stepIndex = 0;
+      var children = processNode.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType !== 1) continue;
+        var tag = getLocalTagName(child);
+        if (tag === 'TITLE') continue;
+        if (tag === 'STEPS') {
+          var stepsWrap = document.createElement('div');
+          stepsWrap.className = 'repair-steps';
+          renderRepairSteps(child, stepsWrap, stepContext, stepIndex);
+          processBlock.appendChild(stepsWrap);
+          stepIndex = stepIndex + getStepCount(child);
+          continue;
+        }
+        if (tag === 'HINTS') {
+          var hintsWrap = document.createElement('div');
+          hintsWrap.className = 'repair-hint-group';
+          renderChildren(child, hintsWrap, renderRepairNode, stepContext);
+          processBlock.appendChild(hintsWrap);
+          continue;
+        }
+        renderRepairNode(child, processBlock, stepContext);
+      }
+
+      container.appendChild(processBlock);
+    }
+
+    function getStepCount(stepsNode) {
+      var count = 0;
+      var children = stepsNode.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].nodeType === 1 && getLocalTagName(children[i]) === 'OPERATINGSTEP') count++;
+      }
+      return count;
+    }
+
+    function renderRepairSteps(stepsNode, container, context, startIndex) {
+      var stepIndex = startIndex || 0;
+      var children = stepsNode.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType !== 1) continue;
+        var tag = getLocalTagName(child);
+        if (tag === 'OPERATINGSTEP') {
+          stepIndex++;
+          renderRepairStep(child, container, { depth: context.depth, stepIndex: stepIndex });
+          continue;
+        }
+        if (tag === 'INCLUDE_PROCESS' || tag === 'PROCESS') {
+          renderRepairNode(child, container, { depth: context.depth + 1 });
+          continue;
+        }
+        renderRepairNode(child, container, context);
+      }
+    }
+
+    function renderRepairStep(stepNode, container, context) {
+      var stepDiv = document.createElement('section');
+      stepDiv.className = 'repair-step';
+
+      var stepTitle = document.createElement('div');
+      stepTitle.className = 'repair-step-title';
+
+      var stepIndexEl = document.createElement('span');
+      stepIndexEl.className = 'repair-step-index';
+      stepIndexEl.textContent = String(context.stepIndex || 0);
+      stepTitle.appendChild(stepIndexEl);
+
+      var stepText = document.createElement('span');
+      stepText.textContent = '操作步驟';
+      stepTitle.appendChild(stepText);
+
+      stepDiv.appendChild(stepTitle);
+
+      var stepChildren = stepNode.childNodes;
+      for (var i = 0; i < stepChildren.length; i++) {
+        renderRepairNode(stepChildren[i], stepDiv, context);
+      }
+
+      container.appendChild(stepDiv);
+    }
+
+    function renderRepairHint(hintNode, container, context) {
+      var hintDiv = document.createElement('div');
+      hintDiv.className = 'repair-hint';
+
+      var signalWord = getFirstChildText(hintNode, 'SIGNALWORD') || getFirstChildText(hintNode, 'TITLE');
+      var tag = getLocalTagName(hintNode);
+      if (tag === 'DAMAGE' || /警告|危險|危险|注意|損壞|损坏/i.test(signalWord)) {
+        hintDiv.classList.add('attention');
+      }
+
+      if (signalWord) {
+        var titleEl = document.createElement('div');
+        titleEl.className = 'repair-hint-title';
+        titleEl.textContent = signalWord;
+        hintDiv.appendChild(titleEl);
+      }
+
+      var children = hintNode.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType !== 1) continue;
+        var childTag = getLocalTagName(child);
+        if (childTag === 'SIGNALWORD' || childTag === 'GRAPHIC' || childTag === 'TITLE') continue;
+        renderRepairNode(child, hintDiv, context);
+      }
+
+      container.appendChild(hintDiv);
+    }
+
+    function renderGraphicPlaceholder(node) {
+      var src = node.getAttribute('SRC') || '(未知圖片)';
+      var d = document.createElement('div');
+      d.className = 'graphic-placeholder';
+      d.textContent = '[圖片] ' + src;
+      return d;
+    }
+
+    function renderHotspot(node) {
+      var span = document.createElement('span');
+      span.className = 'hotspot';
+      span.textContent = node.textContent.trim();
+      var linkId = node.getAttribute('LINKID') || '';
+      if (linkId) span.setAttribute('title', 'HOTSPOT: ' + linkId);
+      return span;
+    }
+
+    function getLocalTagName(node) {
+      if (!node || node.nodeType !== 1) return '';
+      var localName = node.localName || node.tagName || '';
+      return localName.split(':').pop().toUpperCase();
+    }
+
+    function findFirstElementByLocalTag(node, targetTagName) {
+      if (!node) return null;
+      var target = targetTagName.toUpperCase();
+      if (node.nodeType === 1 && getLocalTagName(node) === target) {
+        return node;
+      }
+
+      var children = node.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType !== 1) continue;
+        var found = findFirstElementByLocalTag(child, target);
+        if (found) return found;
+      }
+
+      return null;
+    }
+
+    function getFirstChildElement(parentNode, childTagName) {
+      if (!parentNode) return null;
+      var ch = parentNode.childNodes;
+      var target = childTagName.toUpperCase();
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType === 1 && getLocalTagName(ch[i]) === target) {
+          return ch[i];
+        }
+      }
+      return null;
+    }
+
+    function getFirstChildText(parentNode, childTagName) {
+      var child = getFirstChildElement(parentNode, childTagName);
+      return child ? child.textContent.trim() : '';
+    }
+
+    function joinNonEmpty(values, separator) {
+      var items = [];
+      for (var i = 0; i < values.length; i++) {
+        if (values[i]) items.push(values[i]);
+      }
+      return items.join(separator);
+    }
+
+    function showError(message) {
+      var content = document.getElementById('content');
+      content.innerHTML = '<p style="color:red;padding:20px;">' + message + '</p>';
+    }
+
+    function renderNode(node, container) {
+      if (node.nodeType === 3) {
+        if (node.textContent.trim()) container.appendChild(document.createTextNode(node.textContent));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      var tag = getLocalTagName(node);
+      switch (tag) {
+        case 'FUNCTIONALDESCRIPTION': renderChildren(node, container); break;
+        case 'DOCUMENTTITLE': break;
+        case 'FUNCDESCINTRODUCTORY': { var s = document.createElement('section'); s.className = 'intro'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'CHAPTER': { var s = document.createElement('section'); s.className = 'chapter'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'SUBSECTION2': { var s = document.createElement('section'); s.className = 'subsection'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'HEADING': { var h = document.createElement('h2'); h.textContent = node.textContent.trim(); container.appendChild(h); break; }
+        case 'PARAGRAPH': { var p = document.createElement('p'); renderChildren(node, p); container.appendChild(p); break; }
+        case 'EMPHASIZE':
+        case 'EMPHASIZE1':
+        case 'EMPHASIZE2':
+        case 'EMPHASIZE3': { var st = document.createElement('strong'); renderChildren(node, st); container.appendChild(st); break; }
+        case 'LIST':
+        case 'GENERALLIST': {
+          container.appendChild(renderList(node));
+          break;
+        }
+        case 'LISTENTRY':
+        case 'LISTELEMENT': {
+          container.appendChild(renderListItem(node));
+          break;
+        }
+        case 'LABEL': {
+          var span = document.createElement('span');
+          span.className = 'xml-list-label';
+          span.textContent = node.textContent.trim();
+          container.appendChild(span);
+          break;
+        }
+        case 'GRAPHIC': {
+          container.appendChild(renderGraphicPlaceholder(node));
+          break;
+        }
+        case 'TABLE': renderTable(node, container); break;
+        default: renderChildren(node, container); break;
+      }
+    }
+
+    function renderChildren(node, container, renderer, context) {
+      var ch = node.childNodes;
+      var fn = typeof renderer === 'function' ? renderer : renderNode;
+      for (var i = 0; i < ch.length; i++) {
+        fn(ch[i], container, context);
+      }
+    }
+
+    function renderList(listNode) {
+      var ul = document.createElement('ul');
+      ul.className = 'xml-list';
+
+      var listType = (listNode.getAttribute('TYPE') || '').toUpperCase();
+      var ch = listNode.childNodes;
+
+      for (var i = 0; i < ch.length; i++) {
+        var child = ch[i];
+        if (child.nodeType !== 1) continue;
+
+        var tag = getLocalTagName(child);
+        if (tag === 'LISTENTRY' || tag === 'LISTELEMENT') {
+          ul.appendChild(renderListItem(child, listType));
+        }
+      }
+
+      return ul;
+    }
+
+    function renderListItem(itemNode, listType) {
+      var li = document.createElement('li');
+      li.className = 'xml-list-item';
+
+      var labelEl = document.createElement('span');
+      labelEl.className = 'xml-list-label';
+
+      var bodyEl = document.createElement('div');
+      bodyEl.className = 'xml-list-body';
+
+      var hasLabel = false;
+      var hasBody = false;
+      var ch = itemNode.childNodes;
+
+      for (var i = 0; i < ch.length; i++) {
+        var child = ch[i];
+        if (child.nodeType !== 1) continue;
+
+        var tag = getLocalTagName(child);
+
+        if (tag === 'LABEL') {
+          labelEl.textContent = child.textContent.trim();
+          hasLabel = !!labelEl.textContent;
+          continue;
+        }
+
+        if (tag === 'PARAGRAPH') {
+          var p = document.createElement('p');
+          renderChildren(child, p);
+          bodyEl.appendChild(p);
+          hasBody = true;
+          continue;
+        }
+
+        renderNode(child, bodyEl);
+        hasBody = true;
+      }
+
+      if (!hasLabel) {
+        labelEl.textContent = listType === 'DASH' ? '–' : '•';
+      }
+
+      if (!hasBody) {
+        bodyEl.textContent = itemNode.textContent.trim();
+      }
+
+      li.appendChild(labelEl);
+      li.appendChild(bodyEl);
+      return li;
+    }
+
+    function renderTable(tableNode, container) {
+      var table = document.createElement('table');
+      var tgroup = null;
+      var hasThead = false;
+      var firstBodyRow = null;
+      var ch = tableNode.childNodes;
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType === 1 && getLocalTagName(ch[i]) === 'TGROUP') {
+          tgroup = ch[i];
+          break;
+        }
+      }
+      if (!tgroup) {
+        container.appendChild(table);
+        return;
+      }
+      var colspecs = [];
+      var tgCh = tgroup.childNodes;
+      for (var i = 0; i < tgCh.length; i++) {
+        if (tgCh[i].nodeType === 1 && getLocalTagName(tgCh[i]) === 'COLSPEC') colspecs.push(tgCh[i]);
+      }
+      var widths = [];
+      var total = 0;
+      for (var i = 0; i < colspecs.length; i++) {
+        var w = parseFloat(colspecs[i].getAttribute('COLWIDTH') || '0') || 0;
+        widths.push(w);
+        total += w;
+      }
+      if (total > 0 && widths.length > 0) {
+        var cg = document.createElement('colgroup');
+        for (var i = 0; i < widths.length; i++) {
+          var col = document.createElement('col');
+          col.style.width = (widths[i] / total * 100).toFixed(2) + '%';
+          cg.appendChild(col);
+        }
+        table.appendChild(cg);
+      }
+      for (var i = 0; i < tgCh.length; i++) {
+        if (tgCh[i].nodeType !== 1) continue;
+        var st = getLocalTagName(tgCh[i]);
+        if (st === 'THEAD') {
+          hasThead = true;
+          var thead = document.createElement('thead');
+          renderTableSection(tgCh[i], thead, 'th', true);
+          table.appendChild(thead);
+        } else if (st === 'TBODY') {
+          var tbody = document.createElement('tbody');
+          firstBodyRow = renderTableSection(tgCh[i], tbody, 'td', false);
+          table.appendChild(tbody);
+        }
+      }
+      if (!hasThead && firstBodyRow) { firstBodyRow.classList.add('highlight-row'); }
+      container.appendChild(table);
+    }
+
+    function renderTableSection(sectionNode, sectionEl, cellTag, highlightAllRows) {
+      var ch = sectionNode.childNodes;
+      var firstRenderedRow = null;
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType !== 1 || getLocalTagName(ch[i]) !== 'ROW') continue;
+        var tr = document.createElement('tr');
+        if (!firstRenderedRow) firstRenderedRow = tr;
+        if (highlightAllRows) tr.classList.add('highlight-row');
+        var entries = ch[i].childNodes;
+        for (var j = 0; j < entries.length; j++) {
+          var entry = entries[j];
+          if (entry.nodeType !== 1 || getLocalTagName(entry) !== 'ENTRY') continue;
+          var cell = document.createElement(cellTag);
+          var mr = parseInt(entry.getAttribute('MOREROWS') || '0', 10);
+          if (mr > 0) cell.rowSpan = mr + 1;
+          renderChildren(entry, cell);
+          tr.appendChild(cell);
+        }
+        sectionEl.appendChild(tr);
+      }
+      return firstRenderedRow;
+    }
+  </script></script>
+</body>
+
+</html>

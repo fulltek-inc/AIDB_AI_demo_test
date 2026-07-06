@@ -1,0 +1,949 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>資料預覽</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(11, 20, 34, .88);
+      --panel2: rgba(17, 30, 50, .92);
+      --line: rgba(148, 180, 220, .18);
+      --text: #e7f1ff;
+      --muted: #8fa7c6;
+      --accent: #49a6ff;
+      --accent2: #7ef0c2;
+      --warn: #ffcc66;
+      --danger: #ff7a7a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Arial, sans-serif;
+      background: radial-gradient(circle at top left, rgba(73, 166, 255, .26), transparent 30%), radial-gradient(circle at bottom right, rgba(126, 240, 194, .16), transparent 26%), linear-gradient(180deg, #08101d, #050b14 55%, #04070e);
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      background: linear-gradient(180deg, rgba(14, 25, 42, .92), rgba(9, 15, 25, .78));
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 12px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 24px rgba(73, 166, 255, .6);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .primary {
+      color: #04111f;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      font-weight: 700;
+    }
+
+    .ghost {
+      color: var(--text);
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .08);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 16px rgba(255, 204, 102, .75);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 40% 1fr;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .sidebar,
+    .main {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(9, 16, 28, .85), rgba(5, 10, 17, .96));
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .header,
+    .panel-header {
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header h2,
+    .panel-header h2 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .header p,
+    .panel-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .panel-header {
+      display: none;
+    }
+
+    #htmlPane .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #htmlPane .panel-header>div {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .panel-open-button {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #2b91c0;
+    }
+
+    .panel-open-button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+
+    .toolbar {
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tree-search {
+      padding: 12px 16px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .tree-search label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tree-search input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, .10);
+      border-radius: 7px;
+      background: rgb(71 71 71 / 92%);
+      color: var(--text);
+      padding: 11px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .tree-search input::placeholder {
+      color: rgba(143, 167, 198, .78);
+    }
+
+    .tree-search input:focus {
+      border-color: rgba(73, 166, 255, .6);
+      box-shadow: 0 0 0 3px rgba(73, 166, 255, .16);
+      background: rgba(7, 16, 30, .98);
+    }
+
+    .tree-search .search-hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .tree {
+      overflow: auto;
+      padding: 14px 12px 18px;
+    }
+
+    .empty,
+    .welcome,
+    .error {
+      margin: 8px 0;
+      padding: 20px;
+      border-radius: 16px;
+      line-height: 1.7;
+    }
+
+    .empty,
+    .welcome {
+      border: 1px dashed rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .03);
+      color: var(--muted);
+    }
+
+    .error {
+      border: 1px solid rgba(255, 122, 122, .32);
+      background: rgba(255, 122, 122, .12);
+      color: #ffd7d7;
+      white-space: pre-wrap;
+    }
+
+    details {
+      margin: 8px 0;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .07);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .group,
+    .branch {
+      position: relative;
+      margin-left: 10px;
+      padding-left: 7px;
+    }
+
+    .group::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, rgba(148, 180, 220, .35), rgba(148, 180, 220, .08));
+    }
+
+    details[open] {
+      background: rgba(255, 255, 255, .05);
+    }
+
+    summary {
+      list-style: none;
+      cursor: pointer;
+      position: relative;
+      padding: 12px 12px 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    summary::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 14px;
+      height: 1px;
+      background: rgba(148, 180, 220, .34);
+      transform: translateY(-50%);
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .group>summary {
+      background: linear-gradient(90deg, rgba(73, 166, 255, .18), rgba(73, 166, 255, .06));
+      color: #edf6ff;
+    }
+
+    .branch>summary {
+      background: linear-gradient(90deg, rgba(126, 240, 194, .16), rgba(126, 240, 194, .05));
+      color: #ecfff7;
+    }
+
+    .leaf {
+      width: 100%;
+      text-align: left;
+      margin: 6px 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .03));
+      border: 1px solid rgba(255, 255, 255, .10);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .group>summary .count {
+      background: rgba(73, 166, 255, .18);
+      color: #dcecff;
+    }
+
+    .branch>summary .count {
+      background: rgba(126, 240, 194, .16);
+      color: #ebfff6;
+    }
+
+    .leaf small {
+      display: block;
+      margin-top: 4px;
+      color: #a7b8d6;
+      font-size: 11px;
+    }
+
+    .leaf.active {
+      background: linear-gradient(135deg, rgba(73, 166, 255, .30), rgba(126, 240, 194, .22));
+      border-color: rgba(73, 166, 255, .72);
+      box-shadow: 0 0 0 1px rgba(73, 166, 255, .20) inset;
+    }
+
+    .summary-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .count {
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .06);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    .node-list {
+      margin-left: 12px;
+      padding: 0 0 10px 16px;
+      border-left: 1px solid rgba(148, 180, 220, .16);
+    }
+
+    .leaf {
+      position: relative;
+      display: block;
+      width: calc(100% - 12px);
+      margin: 6px 0 6px 12px;
+      padding: 10px 12px 10px 18px;
+    }
+
+    .leaf::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 14px;
+      height: 1px;
+      background: rgba(148, 180, 220, .34);
+      transform: translateY(-50%);
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 12, 20, .72);
+      backdrop-filter: blur(12px);
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .05);
+      color: var(--muted);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, rgba(73, 166, 255, .25), rgba(126, 240, 194, .18));
+      color: var(--text);
+      border-color: rgba(73, 166, 255, .45);
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .meta span {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .body {
+      min-height: 0;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .pane {
+      display: none;
+    }
+
+    .pane.active {
+      display: block;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .card-inner {
+      padding: 16px;
+    }
+
+    .xml-tree {
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .xml-source {
+      margin: 0;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #081018;
+      color: #dcecff;
+      overflow: auto;
+      white-space: pre;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      tab-size: 2;
+    }
+
+    .xml-source.empty {
+      white-space: pre-wrap;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .xml-node {
+      margin-left: 18px;
+      padding-left: 12px;
+      border-left: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .xml-label {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(73, 166, 255, .12);
+      color: #d9ebff;
+      font-weight: 600;
+    }
+
+    .xml-text {
+      color: #c7d8ef;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 3px 0 6px;
+    }
+
+    .xml-attr {
+      color: #9dd1ff;
+      font-size: 12px;
+    }
+
+    .xml-comment {
+      color: #97a6bb;
+      font-style: italic;
+      margin: 4px 0;
+    }
+
+    .html-view {
+      color: #dbe8fb;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .html-view h2 {
+      font-size: 15px;
+      margin: 14px 0 8px;
+      color: #eff7ff;
+    }
+
+    .html-view p {
+      margin: 4px 0;
+    }
+
+    .html-view ul {
+      margin: 6px 0 6px 20px;
+      padding: 0;
+    }
+
+    .html-view li {
+      margin: 3px 0;
+    }
+
+    .html-view table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 10px 0;
+      table-layout: fixed;
+      font-size: 13px;
+    }
+
+    .html-view th,
+    .html-view td {
+      border: 1px solid rgba(255, 255, 255, .14);
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+
+    .html-view th {
+      background: rgba(73, 166, 255, .16);
+      color: #ecf6ff;
+    }
+
+    .placeholder {
+      border: 1px dashed rgba(255, 255, 255, .18);
+      background: rgba(255, 255, 255, .04);
+      color: var(--muted);
+      padding: 16px;
+      border-radius: 14px;
+      margin: 8px 0;
+      font-style: italic;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .64);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .modal-backdrop.visible {
+      display: flex;
+    }
+
+    .modal {
+      width: min(760px, 100%);
+      background: linear-gradient(180deg, rgba(14, 25, 42, .98), rgba(8, 14, 24, .98));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .modal header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal header h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .modal header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .modal-body {
+      padding: 16px 18px 18px;
+      max-height: min(70vh, 700px);
+      overflow: auto;
+    }
+
+    .candidate-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .candidate {
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 14px;
+      color: var(--text);
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .candidate strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .candidate small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width:980px) {
+      body {
+        overflow: auto;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 380px 1fr;
+        height: auto;
+        min-height: calc(100% - 72px);
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div style="min-width:0;">
+          <h1>資料預覽</h1>
+          <div class="subtitle">index.json 優先載入，缺少時從 XML 建立索引並寫回同目錄</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="pill"><span
+            class="dot"
+            id="statusDot"
+          ></span><span id="statusText">尚未載入資料</span></div>
+        <div style="display:none;">
+          <button
+            class="ghost"
+            id="reopenButton"
+          >重新開啟來源</button><button
+            class="primary"
+            id="openButton"
+          >選擇資料夾</button>
+        </div>
+      </div>
+    </div>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="toolbar"><button
+            class="ghost"
+            id="chooseXmlButton"
+          >選擇 XML 建立索引</button><button
+            class="ghost"
+            id="reloadButton"
+          >重載索引</button></div>
+        <div class="tree-search">
+          <label for="treeSearchInput">標題搜尋</label>
+          <input
+            id="treeSearchInput"
+            type="search"
+            placeholder="輸入標題關鍵字，例如：冷卻系統"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div class="search-hint">只會比對左側節點標題，輸入後會即時篩選符合的項目。</div>
+        </div>
+        <div
+          class="tree"
+          id="treePanel"
+        >
+          <div class="empty">尚未載入資料。<br>請先按「選擇資料夾」讀取同目錄的 <strong>index.json</strong>。<br>若找不到
+            <strong>index.json</strong>，會要求你選擇 XML 來建立索引。
+          </div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="tabs">
+          <div class="tab-list"><button
+              class="tab active"
+              data-tab="structure"
+            >XML 結構</button><button
+              class="tab"
+              data-tab="html"
+            >HTML 顯示</button></div>
+          <div
+            class="meta"
+            id="detailMeta"
+          ><span>尚未選擇節點</span></div>
+        </div>
+        <div class="body">
+          <section
+            class="pane active"
+            id="structurePane"
+          >
+            <div class="card">
+              <div class="panel-header">
+                <div>
+                  <h2>XML 結構</h2>
+                  <p id="structureHint">選擇左側節點後，這裡會把 XML escape 後以原始標籤與縮排顯示。</p>
+                </div>
+              </div>
+              <div class="card-inner">
+                <div
+                  class="xml-tree"
+                  id="structureView"
+                ></div>
+              </div>
+            </div>
+          </section>
+          <section
+            class="pane"
+            id="htmlPane"
+          >
+            <div class="card">
+              <div class="panel-header">
+                <div style="visibility: hidden;">
+                  <h2>HTML 顯示</h2>
+                  <p id="htmlHint">這裡會沿用現有 viewer 的 XML 轉 HTML 呈現邏輯。</p>
+                </div>
+                <button
+                  type="button"
+                  class="ghost panel-open-button"
+                  id="openHtmlTabButton"
+                  disabled
+                >另開分頁</button>
+              </div>
+              <div class="card-inner">
+                <div
+                  class="html-view"
+                  id="htmlView"
+                ></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div
+    class="modal-backdrop"
+    id="candidateModal"
+    aria-hidden="true"
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="candidateTitle"
+    >
+      <header>
+        <h3 id="candidateTitle">選擇 XML 來建立 index.json</h3>
+        <p>目前找不到 index.json，請從來源資料夾內挑選主 XML 檔作為索引來源。</p>
+      </header>
+      <div class="modal-body">
+        <div
+          class="candidate-list"
+          id="candidateList"
+        ></div>
+      </div>
+      <div class="modal-footer"><button
+          class="ghost"
+          id="candidateCancelButton"
+        >取消</button></div>
+    </div>
+  </div>
+  <input
+    type="file"
+    id="xmlFileInput"
+    accept=".xml"
+    class="hidden"
+  >
+  <script>
+    (function () {
+      var state = { dirHandle: null, indexData: null, sourceLabel: '', selectedRecord: null, selectedXmlDoc: null, loading: false, treeSearchQuery: '' };
+      var els = { statusText: document.getElementById('statusText'), statusDot: document.getElementById('statusDot'), openButton: document.getElementById('openButton'), reopenButton: document.getElementById('reopenButton'), chooseXmlButton: document.getElementById('chooseXmlButton'), reloadButton: document.getElementById('reloadButton'), treeSearchInput: document.getElementById('treeSearchInput'), treePanel: document.getElementById('treePanel'), detailMeta: document.getElementById('detailMeta'), structureView: document.getElementById('structureView'), htmlView: document.getElementById('htmlView'), structureHint: document.getElementById('structureHint'), htmlHint: document.getElementById('htmlHint'), openHtmlTabButton: document.getElementById('openHtmlTabButton'), candidateModal: document.getElementById('candidateModal'), candidateList: document.getElementById('candidateList'), candidateCancelButton: document.getElementById('candidateCancelButton'), xmlFileInput: document.getElementById('xmlFileInput') };
+      var DB_NAME = 'bmw-explorer-store', DB_VERSION = 1, HANDLE_KEY = 'source-directory-handle';
+      bindEvents(); init();
+      function bindEvents() { els.openButton.addEventListener('click', openDirectoryFlow); els.reopenButton.addEventListener('click', openDirectoryFlow); els.chooseXmlButton.addEventListener('click', function () { if (!state.dirHandle) { setStatus('請先選擇資料夾', 'warn'); openDirectoryFlow(); return; } chooseXmlFromDirectory(state.dirHandle); }); els.reloadButton.addEventListener('click', function () { if (!state.dirHandle) { setStatus('尚未選擇資料夾', 'warn'); return; } loadFromDirectory(state.dirHandle, { forceReload: true }); }); els.treeSearchInput.addEventListener('input', function () { state.treeSearchQuery = els.treeSearchInput.value.trim(); renderTree(state.indexData); }); els.candidateCancelButton.addEventListener('click', hideModal); els.xmlFileInput.addEventListener('change', handleXmlInput); els.openHtmlTabButton.addEventListener('click', openHtmlInNewTab); document.querySelectorAll('.tab').forEach(function (btn) { btn.addEventListener('click', function () { setTab(btn.dataset.tab); }); }); }
+      async function init() { setStatus('檢查已儲存的資料夾授權...', 'loading'); try { var saved = await loadSavedDirectoryHandle(); if (saved && await ensurePermission(saved)) { state.dirHandle = saved; setStatus('已找到上次來源，開始載入...', 'loading'); await loadFromDirectory(saved, { preferSavedIndex: true }); return; } } catch (e) { console.warn(e); } renderWelcome(); setStatus('尚未開啟來源', 'warn'); }
+      async function openDirectoryFlow() { if (!window.showDirectoryPicker) { setError('目前瀏覽器不支援資料夾選擇器。\n請改用支援 File System Access API 的 Chromium 系列瀏覽器。'); return; } try { var dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }); if (!dirHandle) return; state.dirHandle = dirHandle; await saveDirectoryHandle(dirHandle); await loadFromDirectory(dirHandle, { preferSavedIndex: true }); } catch (e) { if (e && e.name === 'AbortError') { setStatus('已取消選擇', 'warn'); return; } setError('無法開啟資料夾：\n' + formatError(e)); } }
+      async function loadFromDirectory(dirHandle, options) { options = options || {}; if (state.loading) return; state.loading = true; setStatus('掃描來源資料夾...', 'loading'); try { var indexHandle = await getFileHandleIfExists(dirHandle, 'index.json'); if (indexHandle && !options.forceReload) { var indexText = await readFileHandle(indexHandle); var indexData = JSON.parse(indexText); applyIndexData(indexData, 'index.json'); setStatus('已讀取 index.json', 'ready'); return; } var candidate = await resolveXmlCandidate(dirHandle, options); if (!candidate) throw new Error('找不到可建立索引的 XML 檔'); var xmlText = candidate.text; if (!xmlText && candidate.handle) { xmlText = await readFileHandle(candidate.handle); } var xmlDoc = parseXml(xmlText); var indexDataFromXml = buildIndexFromXml(xmlDoc); applyIndexData(indexDataFromXml, candidate.name); await writeIndexJson(dirHandle, indexDataFromXml); setStatus('已由 XML 建立 index.json', 'ready'); } catch (e) { setError('載入來源失敗：\n' + formatError(e)); } finally { state.loading = false; } }
+      async function resolveXmlCandidate(dirHandle, options) { var candidates = await collectTopLevelXmlCandidates(dirHandle); if (!candidates.length) { if (options && options.forceReload) throw new Error('找不到可用的 XML 檔案'); return chooseXmlFromInput(); } if (candidates.length === 1) return candidates[0]; return await promptCandidateSelection(candidates); }
+      async function chooseXmlFromDirectory(dirHandle) { try { state.loading = true; setStatus('挑選 XML 來源...', 'loading'); var chosen = await resolveXmlCandidate(dirHandle, {}); if (!chosen) return; var xmlText = chosen.text; if (!xmlText && chosen.handle) { xmlText = await readFileHandle(chosen.handle); } var xmlDoc = parseXml(xmlText); var indexData = buildIndexFromXml(xmlDoc); applyIndexData(indexData, chosen.name); await writeIndexJson(dirHandle, indexData); setStatus('已由 XML 建立 index.json', 'ready'); } catch (e) { setError('建立索引失敗：\n' + formatError(e)); } finally { state.loading = false; } }
+      function chooseXmlFromInput() { return new Promise(function (resolve, reject) { els.xmlFileInput.value = ''; els.xmlFileInput.onchange = function () { var file = els.xmlFileInput.files && els.xmlFileInput.files[0]; if (!file) { reject(new Error('未選擇 XML 檔')); return; } readFileAsText(file).then(function (text) { var xmlDoc = parseXml(text); var indexData = buildIndexFromXml(xmlDoc); applyIndexData(indexData, file.name); setStatus('已由 XML 建立索引。若要儲存 index.json，請先選擇資料夾。', 'warn'); resolve({ name: file.name, handle: null, text: text, indexData: indexData }); }).catch(reject); }; els.xmlFileInput.oncancel = function () { reject(new DOMException('Aborted', 'AbortError')); }; els.xmlFileInput.click(); }); }
+      async function handleXmlInput() { }
+      async function promptCandidateSelection(candidates) { return new Promise(function (resolve) { els.candidateList.innerHTML = ''; candidates.forEach(function (candidate) { var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'candidate'; btn.innerHTML = '<strong>' + escapeHtml(candidate.name) + '</strong><small>' + (escapeHtml(candidate.path || '根目錄 XML')) + '</small>'; btn.addEventListener('click', function () { hideModal(); resolve(candidate); }); els.candidateList.appendChild(btn); }); els.candidateCancelButton.onclick = function () { hideModal(); resolve(null); }; showModal(); }); }
+      function showModal() { els.candidateModal.classList.add('visible'); els.candidateModal.setAttribute('aria-hidden', 'false'); }
+      function hideModal() { els.candidateModal.classList.remove('visible'); els.candidateModal.setAttribute('aria-hidden', 'true'); }
+      async function collectTopLevelXmlCandidates(dirHandle) { var candidates = []; for await (var entry of dirHandle.entries()) { var name = entry[0], handle = entry[1]; if (handle.kind !== 'file') continue; if (!/\.xml$/i.test(name)) continue; if (/^index\.json$/i.test(name)) continue; candidates.push({ name: name, handle: handle, path: '' }); } candidates.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); }); return candidates; }
+      async function getFileHandleIfExists(dirHandle, fileName) { try { return await dirHandle.getFileHandle(fileName); } catch (e) { return null; } }
+      async function readFileHandle(fileHandle) { var file = await fileHandle.getFile(); return await file.text(); }
+      function readFileAsText(file) { return new Promise(function (resolve, reject) { var reader = new FileReader(); reader.onload = function (ev) { resolve(ev.target.result); }; reader.onerror = function () { reject(new Error('讀取檔案失敗')); }; reader.readAsText(file, 'UTF-8'); }); }
+      function parseXml(xmlText) { var parser = new DOMParser(); var doc = parser.parseFromString(xmlText, 'text/xml'); var parseError = doc.querySelector('parsererror'); if (parseError) throw new Error('XML 解析錯誤：\n' + parseError.textContent.trim()); return doc; }
+      function buildIndexFromXml(xmlDoc) { var nodes = xmlDoc.querySelectorAll('XmlDocumentList > XmlDocumentData_CLS'); var indexData = {}; nodes.forEach(function (node) { var documentType = getNodeText(node, 'DocumentType'); var parentName = getNodeText(node, 'ParentName'); var nameCn = getNodeText(node, 'Name_CN'); var xmlNb = getNodeText(node, 'XmlNb'); var factFileName = getNodeText(node, 'FactFileName'); if (!documentType || !parentName || !nameCn) return; if (!indexData[documentType]) indexData[documentType] = {}; if (!indexData[documentType][parentName]) indexData[documentType][parentName] = {}; indexData[documentType][parentName][nameCn] = { XmlNb: xmlNb || '', FactFileName: factFileName || '' }; }); return indexData; }
+      function getNodeText(parent, tagName) { var element = parent.querySelector(tagName); return element ? element.textContent.trim() : ''; }
+      async function writeIndexJson(dirHandle, indexData) { try { if (!dirHandle || !dirHandle.requestPermission) { downloadJson(indexData, 'index.json'); return; } var permission = await dirHandle.requestPermission({ mode: 'readwrite' }); if (permission !== 'granted') { downloadJson(indexData, 'index.json'); setStatus('無法直接寫入同目錄，已改為下載 index.json', 'warn'); return; } var fileHandle = await dirHandle.getFileHandle('index.json', { create: true }); var writable = await fileHandle.createWritable(); await writable.write(JSON.stringify(indexData, null, 2)); await writable.close(); } catch (e) { console.warn(e); downloadJson(indexData, 'index.json'); setStatus('寫入 index.json 失敗，已改為下載檔案', 'warn'); } }
+      function downloadJson(data, fileName) { var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' }); var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000); }
+      function applyIndexData(indexData, sourceLabel) { state.indexData = indexData; state.sourceLabel = sourceLabel || ''; state.selectedRecord = null; state.selectedXmlDoc = null; renderTree(indexData); renderEmptySelection(); updateDetailMeta(); }
+      function renderTree(indexData) { els.treePanel.innerHTML = ''; var query = normalizeSearchText(state.treeSearchQuery); var documentTypes = Object.keys(indexData || {}); if (!documentTypes.length) { els.treePanel.appendChild(createEmptyMessage('索引為空。\n請先建立或讀取 index.json。')); return; } documentTypes.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); }); var totalMatches = 0; documentTypes.forEach(function (documentType) { var parents = indexData[documentType] || {}; var parentKeys = Object.keys(parents).sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); }); var filteredParents = []; parentKeys.forEach(function (parentName) { var records = parents[parentName] || {}; var names = Object.keys(records).sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); }); var filteredNames = names.filter(function (nameCn) { return matchesSearch(query, documentType, parentName, nameCn, records[nameCn]); }); if (!query || filteredNames.length) filteredParents.push({ parentName: parentName, records: records, names: query ? filteredNames : names }); }); if (!filteredParents.length) return; var groupMatchCount = filteredParents.reduce(function (count, item) { return count + item.names.length; }, 0); totalMatches += groupMatchCount; var group = document.createElement('details'); group.className = 'group tree-group'; group.open = true; var summary = document.createElement('summary'); summary.innerHTML = '<span class="summary-title"><strong>' + escapeHtml(documentType) + '</strong>' + (query ? ' <span class="count">' + groupMatchCount + ' 項符合</span>' : '') + '</span><span class="count">' + filteredParents.length + ' 群組</span>'; group.appendChild(summary); var groupBody = document.createElement('div'); groupBody.className = 'node-list'; filteredParents.forEach(function (parentItem) { var branch = document.createElement('details'); branch.className = 'branch tree-branch'; branch.open = true; var branchSummary = document.createElement('summary'); branchSummary.innerHTML = '<span class="summary-title">' + escapeHtml(parentItem.parentName) + '</span><span class="count">' + parentItem.names.length + ' 項</span>'; branch.appendChild(branchSummary); var branchBody = document.createElement('div'); branchBody.className = 'node-list'; parentItem.names.forEach(function (nameCn) { var record = parentItem.records[nameCn]; var key = makeRecordKey(documentType, parentItem.parentName, nameCn); var button = document.createElement('button'); button.type = 'button'; button.className = 'leaf tree-leaf'; button.dataset.key = key; button.innerHTML = '<strong>' + escapeHtml(nameCn) + '</strong><small>XmlNb: ' + escapeHtml(record.XmlNb || '-') + ' | FactFileName: ' + escapeHtml(record.FactFileName || '-') + '</small>'; button.addEventListener('click', function () { selectRecord(documentType, parentItem.parentName, nameCn, record, key); }); if (state.selectedRecord && state.selectedRecord.documentType === documentType && state.selectedRecord.parentName === parentItem.parentName && state.selectedRecord.nameCn === nameCn) button.classList.add('active'); branchBody.appendChild(button); }); branch.appendChild(branchBody); groupBody.appendChild(branch); }); group.appendChild(groupBody); els.treePanel.appendChild(group); }); if (!els.treePanel.children.length) { els.treePanel.appendChild(createEmptyMessage(query ? '找不到符合標題的項目。\n請嘗試其他關鍵字。' : '索引為空。\n請先建立或讀取 index.json。')); return; } if (query) { els.treePanel.appendChild(createEmptyMessage('已找到 ' + totalMatches + ' 個符合標題的項目。')); } }
+      function selectRecord(documentType, parentName, nameCn, record, key) { state.selectedRecord = { documentType: documentType, parentName: parentName, nameCn: nameCn, record: record }; document.querySelectorAll('.leaf').forEach(function (leaf) { leaf.classList.toggle('active', leaf.dataset.key === key); }); updateDetailMeta(); setStatus('載入 Document XML...', 'loading'); loadDocumentXml(record).then(function (loaded) { state.selectedXmlDoc = loaded.document; renderSelectedDocument(); setStatus('已載入 ' + (record.FactFileName || '未知檔案'), 'ready'); }).catch(function (e) { setError('無法載入 Document XML：\n' + formatError(e)); }); }
+      async function loadDocumentXml(record) { if (!state.dirHandle) throw new Error('尚未選擇資料夾，無法讀取 Document 內容'); var factFileName = (record && record.FactFileName ? String(record.FactFileName) : '').trim(); if (!factFileName) throw new Error('FactFileName 為空，無法定位 Document XML'); var documentDir = await state.dirHandle.getDirectoryHandle('Document'); var fileHandle = await documentDir.getFileHandle(factFileName + '.xml'); var text = await readFileHandle(fileHandle); return { text: text, document: parseXml(text) }; }
+      function renderSelectedDocument() { if (!state.selectedXmlDoc) { renderEmptySelection(); return; } renderXmlStructure(state.selectedXmlDoc, els.structureView); renderHtmlView(state.selectedXmlDoc, els.htmlView); els.structureHint.textContent = describeSelectedRecord(); els.htmlHint.textContent = describeSelectedRecord(); updateHtmlTabButton(); }
+      function renderXmlStructure(xmlDoc, container) { container.innerHTML = ''; var root = xmlDoc.documentElement; if (!root) { container.appendChild(createXmlSourceBlock('XML 沒有可顯示的根節點。', true)); return; } var xmlText = serializeXmlDocument(xmlDoc); container.appendChild(createXmlSourceBlock(xmlText, false)); }
+      function createXmlSourceBlock(text, isEmpty) { var pre = document.createElement('pre'); pre.className = 'xml-source' + (isEmpty ? ' empty' : ''); pre.textContent = text; return pre; }
+      function serializeXmlDocument(xmlDoc) { var xml = ''; if (xmlDoc && xmlDoc.firstChild) { xmlDoc.childNodes.forEach(function (child) { xml += serializeXmlNode(child, 0); }); } return xml.replace(/^\s+$/, '') || 'XML 沒有可顯示的內容。'; }
+      function serializeXmlNode(node, depth) { depth = depth || 0; var indent = new Array(depth + 1).join('  '); if (node.nodeType === Node.DOCUMENT_NODE) { var result = ''; node.childNodes.forEach(function (child) { result += serializeXmlNode(child, depth); }); return result; } if (node.nodeType === Node.ELEMENT_NODE) { var attrs = []; for (var i = 0; i < node.attributes.length; i++) { var attr = node.attributes[i]; attrs.push(attr.name + '="' + escapeXmlAttribute(attr.value) + '"'); } var openTag = '<' + node.nodeName + (attrs.length ? ' ' + attrs.join(' ') : '') + '>'; var closeTag = '</' + node.nodeName + '>'; var childParts = []; node.childNodes.forEach(function (child) { var rendered = serializeXmlNode(child, depth + 1); if (rendered) childParts.push(rendered); }); if (!childParts.length) return indent + openTag + closeTag + '\n'; if (childParts.length === 1 && childParts[0].indexOf('\n') === -1 && node.childNodes.length === 1 && node.firstChild && node.firstChild.nodeType === Node.TEXT_NODE) { return indent + openTag + escapeXmlText(node.textContent) + closeTag + '\n'; } return indent + openTag + '\n' + childParts.join('') + indent + closeTag + '\n'; } if (node.nodeType === Node.TEXT_NODE) { var text = node.textContent; if (!text || !text.trim()) return ''; return indent + escapeXmlText(text.trim()) + '\n'; } if (node.nodeType === Node.COMMENT_NODE) { return indent + '<!-- ' + escapeXmlText(node.textContent.trim()) + ' -->\n'; } if (node.nodeType === Node.CDATA_SECTION_NODE) { return indent + '<![CDATA[' + node.textContent + ']]>\n'; } return ''; }
+      function escapeXmlText(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function escapeXmlAttribute(value) { return escapeXmlText(value).replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
+      function renderHtmlView(xmlDoc, container) { container.innerHTML = ''; var inner = buildHtmlView(xmlDoc); container.appendChild(inner); return inner; }
+      function buildHtmlView(xmlDoc) { var inner = document.createElement('div'); inner.className = 'html-view'; var root = findHtmlRoot(xmlDoc); if (!root) { inner.appendChild(createEmptyMessage('沒有可呈現的 XML 內容。')); return inner; } renderNode(root, inner); return inner; }
+      function findHtmlRoot(xmlDoc) { var funcDesc = xmlDoc.querySelector('FUNCTIONALDESCRIPTION'); return funcDesc || xmlDoc.documentElement; }
+      function renderNode(node, container) { if (node.nodeType === Node.TEXT_NODE) { var text = node.textContent.replace(/\s+/g, ' ').trim(); if (text) container.appendChild(document.createTextNode(text)); return; } if (node.nodeType !== Node.ELEMENT_NODE) return; var tag = node.tagName.toUpperCase(); switch (tag) { case 'FUNCTIONALDESCRIPTION': renderChildren(node, container); break; case 'DOCUMENTTITLE': break; case 'FUNCDESCINTRODUCTORY': case 'CHAPTER': case 'SUBSECTION2': { var section = document.createElement('section'); renderChildren(node, section); container.appendChild(section); break; } case 'HEADING': { var h = document.createElement('h2'); h.textContent = node.textContent.trim(); container.appendChild(h); break; } case 'PARAGRAPH': { var p = document.createElement('p'); renderChildren(node, p); container.appendChild(p); break; } case 'EMPHASIZE': { var strong = document.createElement('strong'); renderChildren(node, strong); container.appendChild(strong); break; } case 'LIST': case 'GENERALLIST': container.appendChild(renderList(node)); break; case 'LISTENTRY': case 'LISTELEMENT': container.appendChild(renderListItem(node)); break; case 'LABEL': { var span = document.createElement('span'); span.className = 'xml-list-label'; span.textContent = node.textContent.trim(); container.appendChild(span); break; } case 'GRAPHIC': { var src = node.getAttribute('SRC') || '(未知圖片)'; var placeholder = document.createElement('div'); placeholder.className = 'placeholder'; placeholder.textContent = '[圖片] ' + src; container.appendChild(placeholder); break; } case 'TABLE': renderTable(node, container); break; default: renderChildren(node, container); break; } }
+      function renderChildren(node, container) { node.childNodes.forEach(function (child) { renderNode(child, container); }); }
+      function renderList(listNode) { var ul = document.createElement('ul'); ul.className = 'xml-list'; var listType = (listNode.getAttribute('TYPE') || '').toUpperCase(); listNode.childNodes.forEach(function (child) { if (child.nodeType !== Node.ELEMENT_NODE) return; var tag = child.tagName.toUpperCase(); if (tag === 'LISTENTRY' || tag === 'LISTELEMENT') ul.appendChild(renderListItem(child, listType)); }); return ul; }
+      function renderListItem(itemNode, listType) { var li = document.createElement('li'); li.className = 'xml-list-item'; var labelEl = document.createElement('span'); labelEl.className = 'xml-list-label'; var bodyEl = document.createElement('div'); bodyEl.className = 'xml-list-body'; var hasLabel = false, hasBody = false; itemNode.childNodes.forEach(function (child) { if (child.nodeType !== Node.ELEMENT_NODE) return; var tag = child.tagName.toUpperCase(); if (tag === 'LABEL') { labelEl.textContent = child.textContent.trim(); hasLabel = !!labelEl.textContent; return; } if (tag === 'PARAGRAPH') { var p = document.createElement('p'); renderChildren(child, p); bodyEl.appendChild(p); hasBody = true; return; } renderNode(child, bodyEl); hasBody = true; }); if (!hasLabel) labelEl.textContent = listType === 'DASH' ? '–' : '•'; if (!hasBody) bodyEl.textContent = itemNode.textContent.trim(); li.appendChild(labelEl); li.appendChild(bodyEl); return li; }
+      function renderTable(tableNode, container) { var table = document.createElement('table'); var tgroup = null; var hasThead = false; var firstBodyRow = null; tableNode.childNodes.forEach(function (child) { if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toUpperCase() === 'TGROUP') tgroup = child; }); if (!tgroup) { container.appendChild(table); return; } var colspecs = []; tgroup.childNodes.forEach(function (child) { if (child.nodeType === Node.ELEMENT_NODE && child.tagName.toUpperCase() === 'COLSPEC') colspecs.push(child); }); var widths = [], total = 0; colspecs.forEach(function (colspec) { var width = parseFloat(colspec.getAttribute('COLWIDTH') || '0') || 0; widths.push(width); total += width; }); if (total > 0 && widths.length > 0) { var colgroup = document.createElement('colgroup'); widths.forEach(function (width) { var col = document.createElement('col'); col.style.width = ((width / total) * 100).toFixed(2) + '%'; colgroup.appendChild(col); }); table.appendChild(colgroup); } tgroup.childNodes.forEach(function (child) { if (child.nodeType !== Node.ELEMENT_NODE) return; var tag = child.tagName.toUpperCase(); if (tag === 'THEAD') { hasThead = true; var thead = document.createElement('thead'); renderTableSection(child, thead, 'th', true); table.appendChild(thead); } else if (tag === 'TBODY') { var tbody = document.createElement('tbody'); firstBodyRow = renderTableSection(child, tbody, 'td', false) || firstBodyRow; table.appendChild(tbody); } }); if (!hasThead && firstBodyRow) firstBodyRow.classList.add('highlight-row'); container.appendChild(table); }
+      function renderTableSection(sectionNode, sectionEl, cellTag, highlightAllRows) { var firstRenderedRow = null; sectionNode.childNodes.forEach(function (rowNode) { if (rowNode.nodeType !== Node.ELEMENT_NODE || rowNode.tagName.toUpperCase() !== 'ROW') return; var tr = document.createElement('tr'); if (!firstRenderedRow) firstRenderedRow = tr; if (highlightAllRows) tr.classList.add('highlight-row'); rowNode.childNodes.forEach(function (entry) { if (entry.nodeType !== Node.ELEMENT_NODE || entry.tagName.toUpperCase() !== 'ENTRY') return; var cell = document.createElement(cellTag); var moreRows = parseInt(entry.getAttribute('MOREROWS') || '0', 10); if (moreRows > 0) cell.rowSpan = moreRows + 1; renderChildren(entry, cell); tr.appendChild(cell); }); sectionEl.appendChild(tr); }); return firstRenderedRow; }
+      function renderEmptySelection() { els.structureView.innerHTML = ''; els.htmlView.innerHTML = ''; els.structureView.appendChild(createEmptyMessage('尚未選擇資料節點。\n請從左側樹狀選單挑選一項。')); els.htmlView.appendChild(createEmptyMessage('尚未選擇資料節點。\n請從左側樹狀選單挑選一項。')); updateHtmlTabButton(); }
+      function renderWelcome() { els.treePanel.innerHTML = ''; els.treePanel.appendChild(createWelcomePanel()); renderEmptySelection(); }
+      function createWelcomePanel() { var panel = document.createElement('div'); panel.className = 'welcome'; panel.innerHTML = '<h3 style="margin:0 0 10px;color:var(--text);font-size:18px;">開始使用</h3><div>這個檢視器會先尋找同目錄的 <strong>index.json</strong>。<br>找不到時，請選擇來源資料夾，然後挑選主 XML 來建立索引。</div><ul style="margin:12px 0 0 18px;padding:0;"><li>左側：三層式選單</li><li>右側：XML 結構與 HTML 顯示</li><li>索引檔：<strong>index.json</strong></li></ul>'; return panel; }
+      function createEmptyMessage(message) { var panel = document.createElement('div'); panel.className = 'empty'; panel.textContent = message; return panel; }
+      function createErrorPanel(message) { var panel = document.createElement('div'); panel.className = 'error'; panel.textContent = message; return panel; }
+      function updateDetailMeta() { if (!state.indexData) { els.detailMeta.innerHTML = '<span>尚未載入索引</span>'; return; } if (!state.selectedRecord) { els.detailMeta.innerHTML = '<span>索引來源：' + escapeHtml(state.sourceLabel || 'index.json') + '</span><span>尚未選擇節點</span>'; return; } var hierarchyText = describeSelectedRecord(); var factFileName = state.selectedRecord.record.FactFileName || '-'; els.detailMeta.innerHTML = '<span>' + escapeHtml(hierarchyText) + '</span><span>FactFileName: ' + escapeHtml(factFileName) + '</span>'; }
+      function describeSelectedRecord() { if (!state.selectedRecord) return '尚未選擇資料節點'; return state.selectedRecord.documentType + ' / ' + state.selectedRecord.parentName + ' / ' + state.selectedRecord.nameCn; }
+      function setTab(tabName) { document.querySelectorAll('.tab').forEach(function (btn) { btn.classList.toggle('active', btn.dataset.tab === tabName); }); document.getElementById('structurePane').classList.toggle('active', tabName === 'structure'); document.getElementById('htmlPane').classList.toggle('active', tabName === 'html'); }
+      function updateHtmlTabButton() { if (!els.openHtmlTabButton) return; els.openHtmlTabButton.disabled = !state.selectedXmlDoc; }
+      function openHtmlInNewTab() { if (!state.selectedXmlDoc) { setStatus('請先選擇一個節點再另開 HTML 分頁', 'warn'); return; } var newWindow = window.open('', '_blank'); if (!newWindow) { setStatus('無法開啟新分頁，可能被瀏覽器阻擋。請允許此網站開啟新分頁後再試一次。', 'danger'); return; } var doc = newWindow.document; var titleText = describeSelectedRecord(); var content = buildHtmlView(state.selectedXmlDoc); doc.open(); doc.write('<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + escapeHtml(titleText) + '</title><style>body{margin:0;padding:24px;background:#08101d;color:#dbe8fb;font-family:\'Microsoft JhengHei\',\'PingFang TC\',\'Noto Sans TC\',Arial,sans-serif;} .page-shell{max-width:1200px;margin:0 auto;} .page-title{margin:0 0 14px;font-size:20px;color:#eff7ff;} .page-subtitle{margin:0 0 20px;color:#8fa7c6;font-size:13px;line-height:1.6;} .html-view{color:#dbe8fb;font-size:14px;line-height:1.65;} .html-view h2{font-size:15px;margin:14px 0 8px;color:#eff7ff;} .html-view p{margin:4px 0;} .html-view ul{margin:6px 0 6px 20px;padding:0;} .html-view li{margin:3px 0;} .html-view table{border-collapse:collapse;width:100%;margin:10px 0;table-layout:fixed;font-size:13px;} .html-view th,.html-view td{border:1px solid rgba(255,255,255,.14);padding:8px 10px;vertical-align:top;} .html-view th{background:rgba(73,166,255,.16);color:#ecf6ff;} .placeholder{border:1px dashed rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:#8fa7c6;padding:16px;border-radius:14px;margin:8px 0;font-style:italic;} .xml-list{margin:4px 0 4px 0;padding:0;list-style:none;} .xml-list-item{display:flex;align-items:flex-start;gap:8px;margin:4px 0;} .xml-list-label{flex:0 0 auto;min-width:14px;color:#1a4070;font-size:14px;line-height:1.6;font-weight:bold;} .xml-list-body{flex:1 1 auto;min-width:0;} .xml-list-body p{margin:0;} .xml-list-body p+p{margin-top:4px;}</style></head><body><div class="page-shell"><h1 class="page-title">' + escapeHtml(titleText) + '</h1><p class="page-subtitle">這是目前 HTML 顯示區塊的獨立分頁，內容與主視窗同步，不會產生額外的 HTML 檔案。</p></div></body></html>'); doc.close(); var shell = doc.querySelector('.page-shell'); if (shell) shell.appendChild(doc.importNode(content, true)); }
+      function setStatus(message, kind) { els.statusText.textContent = message; els.statusDot.style.background = kind === 'ready' ? 'var(--accent2)' : kind === 'danger' ? 'var(--danger)' : kind === 'loading' ? 'var(--warn)' : 'var(--warn)'; }
+      function setError(message) { setStatus('發生錯誤', 'danger'); els.treePanel.innerHTML = ''; els.treePanel.appendChild(createErrorPanel(message)); renderEmptySelection(); }
+      function formatError(error) { if (!error) return '未知錯誤'; if (typeof error === 'string') return error; return error.message || String(error); }
+      function normalizeSearchText(value) { return String(value || '').trim().toLocaleLowerCase('zh-Hant'); }
+      function matchesSearch(query, documentType, parentName, nameCn, record) { if (!query) return true; return normalizeSearchText(nameCn).indexOf(query) !== -1; }
+      function escapeHtml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;'); }
+      function makeRecordKey(documentType, parentName, nameCn) { return [documentType, parentName, nameCn].join('||'); }
+      async function loadSavedDirectoryHandle() { if (!window.indexedDB) return null; var db = await openDb(); return await new Promise(function (resolve, reject) { var tx = db.transaction('handles', 'readonly'); var store = tx.objectStore('handles'); var req = store.get(HANDLE_KEY); req.onsuccess = function () { resolve(req.result || null); }; req.onerror = function () { reject(req.error || new Error('無法讀取已儲存的資料夾授權')); }; }); }
+      async function saveDirectoryHandle(handle) { if (!window.indexedDB) return; var db = await openDb(); await new Promise(function (resolve, reject) { var tx = db.transaction('handles', 'readwrite'); var store = tx.objectStore('handles'); var req = store.put(handle, HANDLE_KEY); req.onsuccess = function () { resolve(); }; req.onerror = function () { reject(req.error || new Error('無法儲存資料夾授權')); }; }); }
+      async function openDb() { return await new Promise(function (resolve, reject) { var req = indexedDB.open(DB_NAME, DB_VERSION); req.onupgradeneeded = function () { var db = req.result; if (!db.objectStoreNames.contains('handles')) db.createObjectStore('handles'); }; req.onsuccess = function () { resolve(req.result); }; req.onerror = function () { reject(req.error || new Error('無法開啟資料庫')); }; }); }
+      async function ensurePermission(handle) { if (!handle || !handle.queryPermission) return false; var permission = await handle.queryPermission({ mode: 'readwrite' }); if (permission === 'granted') return true; permission = await handle.requestPermission({ mode: 'readwrite' }); return permission === 'granted'; }
+      function applyDocumentText(xmlText) { state.selectedXmlDoc = parseXml(xmlText); renderSelectedDocument(); }
+    })();
+  </script>
+</body>
+
+</html>

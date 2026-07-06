@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>BMW 維修手冊 XML 檢視器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft JhengHei', 'Microsoft YaHei', Arial, sans-serif;
+      background: #cccccc;
+      color: #1a4070;
+    }
+
+    #toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 8px 16px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    #toolbar label {
+      cursor: pointer;
+      background: #1e6dc0;
+      color: white;
+      padding: 5px 14px;
+      border-radius: 3px;
+      font-size: 14px;
+      white-space: nowrap;
+      user-select: none;
+
+    }
+
+    #toolbar label:hover {
+      background: #1558a0;
+    }
+
+    #toolbar input[type="file"] {
+      display: none;
+    }
+
+    #filename {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .xml-list {
+      margin: 4px 0 4px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .xml-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .xml-list-label {
+      flex: 0 0 auto;
+      min-width: 14px;
+      color: #1a4070;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: bold;
+    }
+
+    .xml-list-body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .xml-list-body p {
+      margin: 0;
+    }
+
+    .xml-list-body p+p {
+      margin-top: 4px;
+    }
+
+    .doc-title {
+      background: linear-gradient(to bottom, #3a8ee8, #1a6dcc);
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    #content {
+      margin: 0 20px 30px 20px;
+      padding: 0;
+      background: white;
+      border-radius: 6px;
+      overflow: auto;
+    }
+
+    #inner-content {
+      padding: 20px;
+      padding-top: 0;
+    }
+
+    .repair-doc {
+      padding: 16px 20px 20px 20px;
+    }
+
+    .repair-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #2f5d95;
+    }
+
+    .repair-meta span {
+      background: #eaf2fb;
+      border: 1px solid #c5d7ee;
+      border-radius: 999px;
+      padding: 2px 10px;
+    }
+
+    .repair-process {
+      margin-top: 14px;
+    }
+
+    .repair-step {
+      border-top: 1px solid #d7e2ef;
+      padding: 14px 0;
+    }
+
+    .repair-step:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .repair-step-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #1a4070;
+    }
+
+    .repair-step-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #1e6dc0;
+      color: white;
+      font-size: 13px;
+    }
+
+    .repair-hint {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #1e6dc0;
+      background: #f5f9ff;
+      border-radius: 4px;
+    }
+
+    .repair-hint.attention {
+      border-left-color: #d18b00;
+      background: #fff8eb;
+    }
+
+    .repair-hint-title {
+      margin: 0 0 4px 0;
+      font-weight: bold;
+    }
+
+    .hotspot {
+      color: #0f5ca8;
+      text-decoration: underline;
+      cursor: help;
+      font-weight: 600;
+    }
+
+    section.intro,
+    section.chapter,
+    section.subsection {
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      font-size: 15px;
+      color: #1a4070;
+      margin: 14px 0 6px 0;
+      font-weight: bold;
+    }
+
+    p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #1a4070;
+      line-height: 1.6;
+    }
+
+    ul {
+      margin: 4px 0 4px 20px;
+      padding: 0;
+    }
+
+    ul li {
+      font-size: 14px;
+      color: #1a4070;
+      margin: 2px 0;
+      line-height: 1.6;
+    }
+
+    ul.dash {
+      list-style-type: none;
+      padding-left: 4px;
+    }
+
+    ul.dash li::before {
+      content: "\2013 ";
+    }
+
+    .graphic-placeholder {
+      border: 1px dashed #aaa;
+      background: #f5f5f5;
+      color: #888;
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      margin: 8px 0;
+      font-style: italic;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    table th {
+      border: 1px solid #999;
+      padding: 5px 8px;
+      background: #d8e8f8;
+      color: #1a4070;
+      text-align: left;
+      font-weight: bold;
+      vertical-align: bottom;
+    }
+
+    table tr.highlight-row>th,
+    table tr.highlight-row>td {
+      background: #298cff;
+      color: #fff;
+    }
+
+    table td {
+      border: 1px solid #bbb;
+      padding: 5px 8px;
+      color: #1a4070;
+      vertical-align: top;
+    }
+
+    table th p,
+    table td p {
+      margin: 0;
+    }
+
+    #placeholder {
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toolbar">
+    <label for="fileInput">選擇 XML 檔案</label>
+    <input
+      type="file"
+      id="fileInput"
+      accept=".xml"
+    >
+    <span id="filename">尚未選擇檔案</span>
+  </div>
+  <div id="content">
+    <div id="placeholder">請點擊上方按鈕，選擇 Document 資料夾下的 XML 檔案</div>
+  </div>
+  <script>
+    var fileInput = document.getElementById('fileInput');
+    var filenameEl = document.getElementById('filename');
+
+    fileInput.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      loadFile(file);
+    });
+
+    async function loadFile(file) {
+      filenameEl.textContent = file.name;
+      try {
+        var xmlText = await readFileAsText(file);
+        parseAndRender(xmlText);
+      } catch (error) {
+        console.error(error);
+        showError('讀取檔案失敗');
+      }
+    }
+
+    function readFileAsText(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (ev) { resolve(ev.target.result); };
+        reader.onerror = reject;
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
+
+    function parseAndRender(xmlText) {
+      var parser = new DOMParser();
+      var xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      var content = document.getElementById('content');
+      content.innerHTML = '';
+      var parseError = xmlDoc.querySelector('parsererror');
+      if (parseError) { showError('XML 解析錯誤'); return false; }
+      var funcDesc = xmlDoc.querySelector('FUNCTIONALDESCRIPTION');
+      var repairDoc = xmlDoc.querySelector('REPAIRMANUALDOCUMENT');
+      if (!funcDesc && !repairDoc) { showError('找不到可渲染的根元素'); return false; }
+
+      if (repairDoc) {
+        renderRepairDocument(repairDoc, content);
+        return true;
+      }
+
+      var titleEl = funcDesc.querySelector('DOCUMENTTITLE');
+      if (titleEl) {
+        var titleDiv = document.createElement('div');
+        titleDiv.className = 'doc-title';
+        titleDiv.textContent = titleEl.textContent.trim();
+        content.appendChild(titleDiv);
+      }
+      var innerDiv = document.createElement('div');
+      innerDiv.id = 'inner-content';
+      content.appendChild(innerDiv);
+      var children = funcDesc.childNodes;
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.nodeType === 1) {
+          var t = child.tagName.toUpperCase();
+          if (t === 'DOCUMENTTITLE' || t === 'HEADING') continue;
+        }
+        renderNode(child, innerDiv);
+      }
+      return true;
+    }
+
+    function renderRepairDocument(repairDoc, content) {
+      // 新維修手冊格式的入口，維持與舊版相近的閱讀體驗。
+      var titleEl = repairDoc.querySelector('PROCESSTITLE');
+      var titleDiv = document.createElement('div');
+      titleDiv.className = 'doc-title';
+      titleDiv.textContent = renderProcessTitleText(titleEl);
+      content.appendChild(titleDiv);
+
+      var innerDiv = document.createElement('div');
+      innerDiv.id = 'inner-content';
+      innerDiv.className = 'repair-doc';
+      content.appendChild(innerDiv);
+
+      if (titleEl) {
+        var metaDiv = document.createElement('div');
+        metaDiv.className = 'repair-meta';
+
+        var groupText = joinNonEmpty([
+          getChildText(titleEl, 'MAINGROUPNUMBER'),
+          getChildText(titleEl, 'SUBGROUPNUMBER'),
+          getChildText(titleEl, 'JOBNUMBER')
+        ], '-');
+        if (groupText) {
+          var groupSpan = document.createElement('span');
+          groupSpan.textContent = groupText;
+          metaDiv.appendChild(groupSpan);
+        }
+
+        if (metaDiv.childNodes.length) innerDiv.appendChild(metaDiv);
+      }
+
+      var process = repairDoc.querySelector('PROCESS');
+      var processWrap = document.createElement('div');
+      processWrap.className = 'repair-process';
+      innerDiv.appendChild(processWrap);
+
+      if (process) {
+        var children = process.childNodes;
+        var stepIndex = 0;
+        for (var i = 0; i < children.length; i++) {
+          var child = children[i];
+          if (child.nodeType !== 1) continue;
+          if (child.tagName.toUpperCase() !== 'OPERATINGSTEP') continue;
+          stepIndex++;
+          renderRepairStep(child, processWrap, stepIndex);
+        }
+      }
+    }
+
+    function renderProcessTitleText(titleNode) {
+      // 用最關鍵的流程資訊組成頁首標題。
+      if (!titleNode) return '維修流程';
+      var desc = getChildText(titleNode, 'PROCESSDESC');
+      if (desc) return desc;
+      return titleNode.textContent.trim() || '維修流程';
+    }
+
+    function renderRepairStep(stepNode, container, stepIndex) {
+      // 每個操作步驟獨立成區塊，方便閱讀與後續擴充。
+      var stepDiv = document.createElement('section');
+      stepDiv.className = 'repair-step';
+
+      var stepTitle = document.createElement('div');
+      stepTitle.className = 'repair-step-title';
+
+      var stepIndexEl = document.createElement('span');
+      stepIndexEl.className = 'repair-step-index';
+      stepIndexEl.textContent = String(stepIndex);
+      stepTitle.appendChild(stepIndexEl);
+
+      var stepText = document.createElement('span');
+      stepText.textContent = '操作步驟';
+      stepTitle.appendChild(stepText);
+
+      stepDiv.appendChild(stepTitle);
+
+      var stepChildren = stepNode.childNodes;
+      for (var i = 0; i < stepChildren.length; i++) {
+        renderRepairChild(stepChildren[i], stepDiv);
+      }
+
+      container.appendChild(stepDiv);
+    }
+
+    function renderRepairChild(node, container) {
+      if (node.nodeType === 3) {
+        if (node.textContent.trim()) container.appendChild(document.createTextNode(node.textContent));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+
+      var tag = node.tagName.toUpperCase();
+      if (tag === 'HINT') {
+        renderRepairHint(node, container);
+        return;
+      }
+
+      if (tag === 'ILLUSTRATION') {
+        var figure = document.createElement('div');
+        figure.className = 'repair-illustration';
+        renderChildren(node, figure);
+        container.appendChild(figure);
+        return;
+      }
+
+      if (tag === 'HOTSPOT') {
+        container.appendChild(renderHotspot(node));
+        return;
+      }
+
+      if (tag === 'PARAGRAPH') {
+        var p = document.createElement('p');
+        renderChildren(node, p);
+        container.appendChild(p);
+        return;
+      }
+
+      if (tag === 'LIST' || tag === 'GENERALLIST' || tag === 'LISTENTRY' || tag === 'LISTELEMENT') {
+        renderNode(node, container);
+        return;
+      }
+
+      renderNode(node, container);
+    }
+
+    function renderRepairHint(hintNode, container) {
+      // 提示區塊保留原本的注意/提示語意。
+      var hintDiv = document.createElement('div');
+      hintDiv.className = 'repair-hint';
+
+      var titleText = getChildText(hintNode, 'TITLE');
+      var typeText = (hintNode.getAttribute('TYPE') || '').toUpperCase();
+      if (typeText === 'ATTENTION') hintDiv.classList.add('attention');
+
+      if (titleText) {
+        var titleEl = document.createElement('div');
+        titleEl.className = 'repair-hint-title';
+        titleEl.textContent = titleText;
+        hintDiv.appendChild(titleEl);
+      }
+
+      var hintChildren = hintNode.childNodes;
+      for (var i = 0; i < hintChildren.length; i++) {
+        var child = hintChildren[i];
+        if (child.nodeType !== 1) continue;
+        if (child.tagName.toUpperCase() === 'TITLE') continue;
+        renderRepairChild(child, hintDiv);
+      }
+
+      container.appendChild(hintDiv);
+    }
+
+    function renderHotspot(node) {
+      // HOTSPOT 先以可見連結樣式呈現，後續可再接真實跳轉。
+      var span = document.createElement('span');
+      span.className = 'hotspot';
+      span.textContent = node.textContent.trim();
+      var linkId = node.getAttribute('LINKID') || '';
+      if (linkId) span.setAttribute('title', 'HOTSPOT: ' + linkId);
+      return span;
+    }
+
+    function getChildText(parentNode, childTagName) {
+      // 取單一子節點文字，避免到處重複寫 query 與 trim。
+      if (!parentNode) return '';
+      var ch = parentNode.childNodes;
+      var target = childTagName.toUpperCase();
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType === 1 && ch[i].tagName.toUpperCase() === target) {
+          return ch[i].textContent.trim();
+        }
+      }
+      return '';
+    }
+
+    function joinNonEmpty(values, separator) {
+      // 組合頁首資訊時只保留非空值。
+      var items = [];
+      for (var i = 0; i < values.length; i++) {
+        if (values[i]) items.push(values[i]);
+      }
+      return items.join(separator);
+    }
+
+    function showError(message) {
+      var content = document.getElementById('content');
+      content.innerHTML = '<p style="color:red;padding:20px;">' + message + '</p>';
+    }
+
+    function renderNode(node, container) {
+      if (node.nodeType === 3) {
+        if (node.textContent.trim()) container.appendChild(document.createTextNode(node.textContent));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      var tag = node.tagName.toUpperCase();
+      switch (tag) {
+        case 'FUNCTIONALDESCRIPTION': renderChildren(node, container); break;
+        case 'DOCUMENTTITLE': break;
+        case 'FUNCDESCINTRODUCTORY': { var s = document.createElement('section'); s.className = 'intro'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'CHAPTER': { var s = document.createElement('section'); s.className = 'chapter'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'SUBSECTION2': { var s = document.createElement('section'); s.className = 'subsection'; renderChildren(node, s); container.appendChild(s); break; }
+        case 'HEADING': { var h = document.createElement('h2'); h.textContent = node.textContent.trim(); container.appendChild(h); break; }
+        case 'PARAGRAPH': { var p = document.createElement('p'); renderChildren(node, p); container.appendChild(p); break; }
+        case 'EMPHASIZE': { var st = document.createElement('strong'); renderChildren(node, st); container.appendChild(st); break; }
+        case 'LIST':
+        case 'GENERALLIST': {
+          container.appendChild(renderList(node));
+          break;
+        }
+        case 'LISTENTRY':
+        case 'LISTELEMENT': {
+          container.appendChild(renderListItem(node));
+          break;
+        }
+        case 'LABEL': {
+          var span = document.createElement('span');
+          span.className = 'xml-list-label';
+          span.textContent = node.textContent.trim();
+          container.appendChild(span);
+          break;
+        }
+        case 'GRAPHIC': {
+          var src = node.getAttribute('SRC') || '(未知圖片)';
+          var d = document.createElement('div'); d.className = 'graphic-placeholder';
+          d.textContent = '[圖片] ' + src; container.appendChild(d); break;
+        }
+        case 'TABLE': renderTable(node, container); break;
+        default: renderChildren(node, container); break;
+      }
+    }
+
+    function renderChildren(node, container) {
+      var ch = node.childNodes;
+      for (var i = 0; i < ch.length; i++) renderNode(ch[i], container);
+    }
+
+    function renderList(listNode) {
+      var ul = document.createElement('ul');
+      ul.className = 'xml-list';
+
+      var listType = (listNode.getAttribute('TYPE') || '').toUpperCase();
+      var ch = listNode.childNodes;
+
+      for (var i = 0; i < ch.length; i++) {
+        var child = ch[i];
+        if (child.nodeType !== 1) continue;
+
+        var tag = child.tagName.toUpperCase();
+        if (tag === 'LISTENTRY' || tag === 'LISTELEMENT') {
+          ul.appendChild(renderListItem(child, listType));
+        }
+      }
+
+      return ul;
+    }
+
+    function renderListItem(itemNode, listType) {
+      var li = document.createElement('li');
+      li.className = 'xml-list-item';
+
+      var labelEl = document.createElement('span');
+      labelEl.className = 'xml-list-label';
+
+      var bodyEl = document.createElement('div');
+      bodyEl.className = 'xml-list-body';
+
+      var hasLabel = false;
+      var hasBody = false;
+      var ch = itemNode.childNodes;
+
+      for (var i = 0; i < ch.length; i++) {
+        var child = ch[i];
+        if (child.nodeType !== 1) continue;
+
+        var tag = child.tagName.toUpperCase();
+
+        if (tag === 'LABEL') {
+          labelEl.textContent = child.textContent.trim();
+          hasLabel = !!labelEl.textContent;
+          continue;
+        }
+
+        if (tag === 'PARAGRAPH') {
+          var p = document.createElement('p');
+          renderChildren(child, p);
+          bodyEl.appendChild(p);
+          hasBody = true;
+          continue;
+        }
+
+        renderNode(child, bodyEl);
+        hasBody = true;
+      }
+
+      if (!hasLabel) {
+        labelEl.textContent = listType === 'DASH' ? '–' : '•';
+      }
+
+      if (!hasBody) {
+        bodyEl.textContent = itemNode.textContent.trim();
+      }
+
+      li.appendChild(labelEl);
+      li.appendChild(bodyEl);
+      return li;
+    }
+
+    function renderTable(tableNode, container) {
+      var table = document.createElement('table');
+      var tgroup = null; var hasThead = false; var firstBodyRow = null;
+      var ch = tableNode.childNodes;
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType === 1 && ch[i].tagName.toUpperCase() === 'TGROUP') { tgroup = ch[i]; break; }
+      }
+      if (!tgroup) { container.appendChild(table); return; }
+      var colspecs = []; var tgCh = tgroup.childNodes;
+      for (var i = 0; i < tgCh.length; i++) {
+        if (tgCh[i].nodeType === 1 && tgCh[i].tagName.toUpperCase() === 'COLSPEC') colspecs.push(tgCh[i]);
+      }
+      var widths = []; var total = 0;
+      for (var i = 0; i < colspecs.length; i++) {
+        var w = parseFloat(colspecs[i].getAttribute('COLWIDTH') || '0') || 0;
+        widths.push(w); total += w;
+      }
+      if (total > 0 && widths.length > 0) {
+        var cg = document.createElement('colgroup');
+        for (var i = 0; i < widths.length; i++) {
+          var col = document.createElement('col');
+          col.style.width = (widths[i] / total * 100).toFixed(2) + '%';
+          cg.appendChild(col);
+        }
+        table.appendChild(cg);
+      }
+      for (var i = 0; i < tgCh.length; i++) {
+        if (tgCh[i].nodeType !== 1) continue;
+        var st = tgCh[i].tagName.toUpperCase();
+        if (st === 'THEAD') {
+          hasThead = true;
+          var thead = document.createElement('thead');
+          renderTableSection(tgCh[i], thead, 'th', true);
+          table.appendChild(thead);
+        } else if (st === 'TBODY') {
+          var tbody = document.createElement('tbody');
+          firstBodyRow = renderTableSection(tgCh[i], tbody, 'td', false);
+          table.appendChild(tbody);
+        }
+      }
+      if (!hasThead && firstBodyRow) { firstBodyRow.classList.add('highlight-row'); }
+      container.appendChild(table);
+    }
+
+    function renderTableSection(sectionNode, sectionEl, cellTag, highlightAllRows) {
+      var ch = sectionNode.childNodes;
+      var firstRenderedRow = null;
+      for (var i = 0; i < ch.length; i++) {
+        if (ch[i].nodeType !== 1 || ch[i].tagName.toUpperCase() !== 'ROW') continue;
+        var tr = document.createElement('tr');
+        if (!firstRenderedRow) firstRenderedRow = tr;
+        if (highlightAllRows) tr.classList.add('highlight-row');
+        var entries = ch[i].childNodes;
+        for (var j = 0; j < entries.length; j++) {
+          var entry = entries[j];
+          if (entry.nodeType !== 1 || entry.tagName.toUpperCase() !== 'ENTRY') continue;
+          var cell = document.createElement(cellTag);
+          var mr = parseInt(entry.getAttribute('MOREROWS') || '0', 10);
+          if (mr > 0) cell.rowSpan = mr + 1;
+          renderChildren(entry, cell);
+          tr.appendChild(cell);
+        }
+        sectionEl.appendChild(tr);
+      }
+      return firstRenderedRow;
+    }
+  </script>
+</body>
+
+</html>
