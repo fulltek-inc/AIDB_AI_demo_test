@@ -853,6 +853,11 @@
       border-bottom: 1px solid #edf2f7;
       font-size: 13px;
       line-height: 1.45;
+      cursor: pointer;
+    }
+
+    .raw-name-item:hover {
+      background: #88d2f873;
     }
 
     .raw-name-text {
@@ -1441,6 +1446,9 @@
       imageFileMap: new Map(),
       xmlUseImageFileMap: new Map(),
       documentImageUrls: [],
+      convertedSiteCanvasState: null,
+      convertedSiteArrowFrameId: 0,
+      activeConvertedSitePinKey: "",
       selectedSiteIndex: 0,
       selectedComponentIndex: 0,
       componentSearchKeyword: "",
@@ -1791,7 +1799,7 @@
     function getConvertedPinPictureRelativePath(rowItem) {
       const originalPath = getPinPictureRelativePath(rowItem);
       if (!originalPath) return "";
-      return originalPath.replace(/([^/\\]+)\.png$/i, "$1_n.png").replace(/^/, "Output/");
+      return originalPath.replace(/([^/\\]+)\.png$/i, "$1.restyler.png").replace(/^/, "Output/");
     }
 
 
@@ -2232,36 +2240,158 @@
       context.restore();
     }
 
-    // 中文註解：依標註 JSON 內容把符合右側插頭清單的 textbox 與同 groupId arrow 疊到轉換後 Site 圖上。
-    function drawConvertedSiteAnnotations(canvas, image, annotationData, plugNames) {
-      const context = canvas.getContext("2d");
-      const sourceWidth = Number(annotationData && annotationData.width ? annotationData.width : image.naturalWidth) || image.naturalWidth;
-      const sourceHeight = Number(annotationData && annotationData.height ? annotationData.height : image.naturalHeight) || image.naturalHeight;
-      const scaleX = image.naturalWidth / sourceWidth;
-      const scaleY = image.naturalHeight / sourceHeight;
+    // 中文註解：依標註 JSON 內容找出指定插頭名稱對應的 pointer；輸入為 annotationData 與 plugName，輸出為 canvas 座標使用的 pointer 或 null。
+    function findConvertedSitePointerByPlugName(annotationData, plugName) {
       const objects = Array.isArray(annotationData && annotationData.objects) ? annotationData.objects : [];
-      const arrowsByGroupId = new Map();
+      const ocrList = objects.filter(item => item.type === "textbox").map(item => item.ocr);
+      const bestMatch = ocrList.map(ocr => ({
+        ocr,
+        score: longestCommonSubstring(plugName, ocr)
+      })).sort((a, b) => b.score - a.score)[0];
 
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      context.drawImage(image, 0, 0);
-
-      objects.filter((objectItem) => objectItem && objectItem.type === "arrow").forEach((arrowObject) => {
-        const groupId = String(arrowObject.groupId || "");
-        if (!groupId) return;
-        if (!arrowsByGroupId.has(groupId)) arrowsByGroupId.set(groupId, []);
-        arrowsByGroupId.get(groupId).push(arrowObject);
-      });
-
-      objects.filter((objectItem) => objectItem && objectItem.type === "textbox").forEach((textboxObject) => {
-        if (!shouldDrawCalloutText(textboxObject.ocr, plugNames)) return;
-        drawCalloutTextBox(context, scaleCalloutRoi(textboxObject.roi, scaleX, scaleY), textboxObject.ocr);
-        (arrowsByGroupId.get(String(textboxObject.groupId || "")) || []).forEach((arrowObject) => drawCalloutArrow(context, arrowObject, scaleX, scaleY));
-      });
+      // const matchedTextbox = objects.find((objectItem) => objectItem && objectItem.type === "textbox" && shouldDrawCalloutText(objectItem.ocr, [plugName]));
+      const matchedTextbox = objects.find((objectItem) => objectItem && objectItem.type === "textbox" && bestMatch.ocr === objectItem.ocr);
+      if (!matchedTextbox) return null;
+      const matchedArrow = objects.find((objectItem) => objectItem && objectItem.type === "arrow" && String(objectItem.groupId || "") === String(matchedTextbox.groupId || "") && objectItem.pointer);
+      return matchedArrow ? matchedArrow.pointer : null;
     }
 
-    // 中文註解：非同步載入轉換後 Site 圖與同名 JSON 後繪製 canvas；輸入為 canvas 容器與路徑，輸出為畫面上的標註圖。
-    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath, plugNames) {
+    function longestCommonSubstring(a, b) {
+      let max = 0;
+
+      for (let i = 0; i < a.length; i++) {
+        for (let j = i + 1; j <= a.length; j++) {
+          const sub = a.slice(i, j);
+          if (b.includes(sub)) {
+            max = Math.max(max, sub.length);
+          }
+        }
+      }
+
+      return max;
+    }
+
+    // 中文註解：把轉換後 Site 底圖重畫回 canvas；輸入為目前 canvas 狀態，輸出為清除所有箭頭後的乾淨底圖。
+    function redrawConvertedSiteBaseImage(canvasState) {
+      if (!canvasState || !canvasState.canvas || !canvasState.context || !canvasState.image) return;
+      canvasState.context.clearRect(0, 0, canvasState.canvas.width, canvasState.canvas.height);
+      canvasState.context.drawImage(canvasState.image, 0, 0);
+    }
+
+    // 中文註解：停止轉換後 Site 圖箭頭動畫；輸入／輸出走 appState，避免切換資料後舊動畫持續重繪。
+    function stopConvertedSiteArrowAnimation() {
+      if (appState.convertedSiteArrowFrameId) {
+        cancelAnimationFrame(appState.convertedSiteArrowFrameId);
+        appState.convertedSiteArrowFrameId = 0;
+      }
+      appState.activeConvertedSitePinKey = "";
+    }
+
+    // 中文註解：清除轉換後 Site 圖上的箭頭；輸入／輸出走目前 canvas 狀態，會保留底圖但移除提示箭頭。
+    function clearConvertedSiteArrow() {
+      stopConvertedSiteArrowAnimation();
+      redrawConvertedSiteBaseImage(appState.convertedSiteCanvasState);
+    }
+
+    // 中文註解：繪製加粗提示箭頭；輸入為 pointer canvas 座標與閃爍透明度，輸出為藍白外框與黃綠本體交替閃爍的短箭頭。
+    function drawBlinkingPointerArrow(context, pointer, canvasWidth, canvasHeight, alpha) {
+      const pointerX = Math.max(0, Math.min(canvasWidth, pointer.x));
+      const pointerY = Math.max(0, Math.min(canvasHeight, pointer.y));
+      const arrowLength = Math.max(45, Math.min(90, canvasHeight * 0.16));
+      const isNearBottom = pointerY > canvasHeight - arrowLength - 28;
+      const startY = isNearBottom ? Math.max(0, pointerY - arrowLength) : Math.min(canvasHeight, pointerY + arrowLength);
+      const startPoint = { x: pointerX, y: startY };
+      const tipPoint = { x: pointerX, y: pointerY };
+      const angle = Math.atan2(tipPoint.y - startPoint.y, tipPoint.x - startPoint.x);
+      const headLength = 26;
+      const lineEndPoint = {
+        x: tipPoint.x - Math.cos(angle) * (headLength * .72),
+        y: tipPoint.y - Math.sin(angle) * (headLength * .72),
+      };
+      const blinkRatio = Math.max(0, Math.min(1, (alpha - .35) / .65));
+      const outlineColor = blinkRatio > .5 ? "#ffffff" : "#2563eb";
+      const fillColor = blinkRatio > .5 ? "#bef264" : "#facc15";
+
+      // 中文註解：先畫較粗的外框箭頭，提供藍白閃爍輪廓；線段終點退到箭頭頭部後方，避免凸出尖端。
+      context.save();
+      // context.globalAlpha = alpha;
+      // context.strokeStyle = outlineColor;
+      // context.fillStyle = outlineColor;
+      // context.lineWidth = 18;
+      // context.lineCap = "round";
+      // context.lineJoin = "round";
+      // context.shadowColor = "rgba(37, 99, 235, .55)";
+      // context.shadowBlur = 14;
+      // context.beginPath();
+      // context.moveTo(startPoint.x, startPoint.y);
+      // context.lineTo(lineEndPoint.x, lineEndPoint.y);
+      // context.stroke();
+      // context.beginPath();
+      // context.moveTo(tipPoint.x, tipPoint.y);
+      // context.lineTo(tipPoint.x - headLength * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      // context.lineTo(tipPoint.x - headLength * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * Math.sin(angle + Math.PI / 6));
+      // context.closePath();
+      // context.fill();
+      // context.restore();
+
+      // 中文註解：再畫較細的黃綠本體箭頭，讓提示主體在外框內閃爍但不遮住指向尖端。
+      context.save();
+      context.globalAlpha = alpha;
+      context.strokeStyle = fillColor;
+      context.fillStyle = fillColor;
+      context.lineWidth = 10;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.shadowColor = "rgba(132, 204, 22, .45)";
+      context.shadowBlur = 8;
+      context.beginPath();
+      context.moveTo(startPoint.x, startPoint.y);
+      context.lineTo(lineEndPoint.x, lineEndPoint.y);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(tipPoint.x, tipPoint.y);
+      context.lineTo(tipPoint.x - headLength * .72 * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * .72 * Math.sin(angle - Math.PI / 6));
+      context.lineTo(tipPoint.x - headLength * .72 * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * .72 * Math.sin(angle + Math.PI / 6));
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    // 中文註解：依右側 pin 按鈕點選結果啟動閃爍箭頭；輸入 plugName 與 pinKey，同一 pinKey 再點一次會清除箭頭。
+    function toggleConvertedSiteArrowForPlug(plugName, pinKey) {
+      const canvasState = appState.convertedSiteCanvasState;
+      if (!canvasState || !canvasState.annotationData || !canvasState.image) return;
+      if (appState.activeConvertedSitePinKey && appState.activeConvertedSitePinKey === pinKey) {
+        clearConvertedSiteArrow();
+        return;
+      }
+
+      stopConvertedSiteArrowAnimation();
+      const rawPointer = findConvertedSitePointerByPlugName(canvasState.annotationData, plugName);
+      if (!rawPointer) {
+        redrawConvertedSiteBaseImage(canvasState);
+        return;
+      }
+
+      const pointer = scaleCalloutPoint(rawPointer, canvasState.scaleX, canvasState.scaleY);
+      appState.activeConvertedSitePinKey = pinKey;
+      const startedAt = performance.now();
+
+      function drawFrame(now) {
+        if (appState.activeConvertedSitePinKey !== pinKey) return;
+        redrawConvertedSiteBaseImage(canvasState);
+        const alpha = 0.35 + Math.abs(Math.sin((now - startedAt) / 220)) * 0.65;
+        drawBlinkingPointerArrow(canvasState.context, pointer, canvasState.canvas.width, canvasState.canvas.height, alpha);
+        appState.convertedSiteArrowFrameId = requestAnimationFrame(drawFrame);
+      }
+
+      appState.convertedSiteArrowFrameId = requestAnimationFrame(drawFrame);
+    }
+
+    // 中文註解：非同步載入轉換後 Site 圖與同名 JSON；輸入為 canvas 容器與路徑，輸出為只有底圖的 canvas 與暫存標註資料。
+    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath) {
+      stopConvertedSiteArrowAnimation();
+      appState.convertedSiteCanvasState = null;
       if (!canvasWrap) return;
       const canvas = canvasWrap.querySelector(".converted-site-canvas");
       const status = canvasWrap.querySelector(".converted-canvas-status");
@@ -2289,14 +2419,25 @@
         setConvertedStatus("轉換後圖片載入中...", false);
         const [image, annotationData] = await Promise.all([loadImageFile(imageFile), readJsonObjectFile(jsonFile)]);
         if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
-        drawConvertedSiteAnnotations(canvas, image, annotationData, plugNames);
+        const sourceWidth = Number(annotationData && annotationData.width ? annotationData.width : image.naturalWidth) || image.naturalWidth;
+        const sourceHeight = Number(annotationData && annotationData.height ? annotationData.height : image.naturalHeight) || image.naturalHeight;
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        appState.convertedSiteCanvasState = {
+          canvas,
+          context: canvas.getContext("2d"),
+          image,
+          annotationData,
+          scaleX: image.naturalWidth / sourceWidth,
+          scaleY: image.naturalHeight / sourceHeight,
+        };
+        redrawConvertedSiteBaseImage(appState.convertedSiteCanvasState);
         setConvertedStatus("", true);
       } catch (error) {
         if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
         setConvertedStatus(`轉換後圖片繪製失敗：${error.message}`, false);
       }
     }
-
     // 中文註解：解析 Document XML 並檢查 parsererror；輸入是 XML 文字，輸出是 DOM Document。
     function parseDocumentXml(xmlText) {
       const parser = new DOMParser();
@@ -3181,9 +3322,9 @@
         const disabledAttribute = hasPinImage ? "" : " disabled";
         const pinDisplayName = `${selectedComponent.displayName}（${plugName}）`;
         const buttonHtml = pinItem
-          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" data-pin-display-name="${escapeHtml(pinDisplayName)}" title="查看 Pin 圖"${disabledAttribute}>圖</button>`
+          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" data-pin-display-name="${escapeHtml(pinDisplayName)}" data-plug-name="${escapeHtml(plugName)}" title="查看 Pin 圖"${disabledAttribute}>圖</button>`
           : "";
-        return `<li class="raw-name-item"><span class="raw-name-text">${escapeTraditionalHtml(pinDisplayName)}</span>${buttonHtml}</li>`;
+        return `<li class="raw-name-item component-pin-item" data-plug-name="${escapeHtml(plugName)}" data-pin-file-id="${escapeHtml(pinItem ? pinItem.FileID : "")}" data-pin-display-name="${escapeHtml(pinDisplayName)}"><span class="raw-name-text">${escapeTraditionalHtml(pinDisplayName)}</span>${buttonHtml}</li>`;
       }).join("");
 
       tableContainer.className = "compare-layout";
@@ -3243,7 +3384,7 @@
 
       const componentList = tableContainer.querySelector(".component-list");
       if (componentList) componentList.scrollTop = appState.componentListScrollTop;
-      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath, matchedPlugList);
+      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath);
     }
     // 中文註解：目前畫面已固定為最後一個「元件對應圖」內容；保留統一入口，讓載入 JSON、名稱 JSON、索引 JSON 後都能刷新同一個畫面。
     function renderActiveView() {
@@ -3344,7 +3485,7 @@
       pinDrawer.classList.add("open");
     }
 
-    // 中文註解：關閉元件對應圖的右側滑出面板並釋放圖片網址，避免切換資料時殘留舊圖片。
+    // 中文註解：關閉元件對應圖的右側滑出面板並釋放圖片網址；箭頭提示需保留到使用者再次點選清單才清除。
     function closePinDrawer() {
       const pinDrawer = document.getElementById("pinDrawer");
       if (pinDrawer) pinDrawer.classList.remove("open");
@@ -3385,7 +3526,16 @@
       const pinButton = event.target.closest(".pin-button");
       if (pinButton && !pinButton.disabled) {
         const pinItem = appState.filteredData.PictureList_pin.find((item) => String(item.FileID) === String(pinButton.dataset.pinFileId));
-        if (pinItem) openPinDrawer(pinItem, pinButton.dataset.pinDisplayName || "");
+        if (pinItem) {
+          openPinDrawer(pinItem, pinButton.dataset.pinDisplayName || "");
+          toggleConvertedSiteArrowForPlug(pinButton.dataset.plugName || "", `${pinButton.dataset.pinFileId || ""}|${pinButton.dataset.plugName || ""}`);
+        }
+        return;
+      }
+
+      const componentPinItem = event.target.closest(".component-pin-item");
+      if (componentPinItem) {
+        toggleConvertedSiteArrowForPlug(componentPinItem.dataset.plugName || "", `${componentPinItem.dataset.pinFileId || ""}|${componentPinItem.dataset.plugName || ""}`);
         return;
       }
 
