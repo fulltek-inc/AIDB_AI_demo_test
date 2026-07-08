@@ -648,14 +648,123 @@
       background: #f8fafc;
     }
 
+    /* 中文註解：第五分頁中間圖區改為「標題／原始檔／轉換後」三段，限定在 component-image-panel 內避免影響第四分頁共用圖片樣式。 */
     .component-image-panel .site-image-wrap {
-      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      background: transparent;
+    }
+
+    .component-image-stack {
+      min-height: 0;
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
       gap: 10px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+
+    .component-title-section {
+      position: relative;
+      min-height: 48px;
+      padding: 10px 128px 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .component-image-section {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .component-image-side-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      border-right: 1px solid #d7dde5;
+      background: #eaf1fb;
+      color: #1e3a5f;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    .component-image-section-body {
+      min-width: 0;
+      min-height: 0;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #f8fafc;
     }
 
     .component-image-panel .site-image-body {
       flex: 1 1 auto;
-      height: auto;
+      height: 100%;
+    }
+
+    .converted-image-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .converted-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .converted-site-canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .converted-canvas-status {
+      position: absolute;
+      inset: 0;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+      background: rgba(255, 255, 255, .88);
+    }
+
+    .converted-canvas-status.hidden {
+      display: none;
     }
 
     .component-site-title {
@@ -684,6 +793,12 @@
       line-height: 1.2;
       word-break: break-word;
       box-shadow: 0 6px 18px rgba(15, 23, 42, .10);
+    }
+
+    .component-title-section .site-file-id {
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
     }
 
     .site-image-body {
@@ -1470,7 +1585,7 @@
       const imageFileMap = new Map();
       files.forEach((file) => {
         const relativePath = getFolderRelativePath(file).replaceAll("\\", "/").toLowerCase();
-        if (relativePath.startsWith("picture/site/") || relativePath.startsWith("picture/pin/") || relativePath.startsWith("output/picture/pin/")) {
+        if (relativePath.startsWith("picture/site/") || relativePath.startsWith("picture/pin/") || relativePath.startsWith("output/picture/site/") || relativePath.startsWith("output/picture/pin/")) {
           imageFileMap.set(relativePath, file);
         }
       });
@@ -1677,6 +1792,19 @@
       const originalPath = getPinPictureRelativePath(rowItem);
       if (!originalPath) return "";
       return originalPath.replace(/([^/\\]+)\.png$/i, "$1_n.png").replace(/^/, "Output/");
+    }
+
+
+    // 中文註解：依 Site 位置圖 FileID 推導轉換後圖片；輸入為 PictureList_site 資料列，輸出為 Output/Picture/Site/{FileID}.restyler.png。
+    function getConvertedSitePictureRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `output/picture/site/${fileId}.restyler.png` : "";
+    }
+
+    // 中文註解：依 Site 位置圖 FileID 推導轉換後標註 JSON；輸入為 PictureList_site 資料列，輸出為 Output/Picture/Site/{FileID}.restyler.json。
+    function getConvertedSiteJsonRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `output/picture/site/${fileId}.restyler.json` : "";
     }
 
     // 中文註解：依元件 key 對應 PictureList_site；輸入為 _compe_plugs 的 key，輸出為第一筆對應 Site 圖資料。
@@ -2001,6 +2129,174 @@
     function findDocumentXmlFile(factFileName, documentKind) {
       return findFolderFileByRelativePath(getDocumentRelativePath(factFileName, documentKind));
     }
+
+    // 中文註解：讀取並解析資料夾內的 JSON 檔；輸入是 File，輸出為物件，供轉換後 Site 圖標註使用。
+    async function readJsonObjectFile(file) {
+      const jsonText = await readTextFile(file);
+      return JSON.parse(jsonText);
+    }
+
+    // 中文註解：載入瀏覽器 File 圖片；輸入是圖片 File，輸出已可繪製到 canvas 的 Image 物件。
+    function loadImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const imageUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(imageUrl);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error("圖片載入失敗"));
+        };
+        image.src = imageUrl;
+      });
+    }
+
+    // 中文註解：正規化 OCR 與插頭名稱比對文字；輸入任意文字，輸出移除空白並轉小寫的比對 key。
+    function normalizeCalloutMatchText(value) {
+      return String(value || "").replace(/\s+/g, "").toLowerCase();
+    }
+
+    // 中文註解：判斷 OCR 是否出現在右側插頭清單；輸入 OCR 與目前顯示 plugList，輸出是否需要繪製該標註。
+    function shouldDrawCalloutText(ocrText, plugNames) {
+      const ocrKey = normalizeCalloutMatchText(ocrText);
+      if (!ocrKey) return false;
+      return plugNames.some((plugName) => {
+        const plugKey = normalizeCalloutMatchText(plugName);
+        return plugKey && (ocrKey.includes(plugKey) || plugKey.includes(ocrKey));
+      });
+    }
+
+    // 中文註解：把標註 JSON 的座標依圖片實際尺寸縮放；輸入為原始座標、JSON 尺寸與圖片尺寸，輸出 canvas 座標。
+    function scaleCalloutPoint(point, scaleX, scaleY) {
+      return {
+        x: Number(point && point.x ? point.x : 0) * scaleX,
+        y: Number(point && point.y ? point.y : 0) * scaleY,
+      };
+    }
+
+    // 中文註解：把 roi 轉為 canvas 矩形；輸入 JSON roi 與縮放比例，輸出 x/y/width/height。
+    function scaleCalloutRoi(roi, scaleX, scaleY) {
+      const x1 = Number(roi && roi.x1 ? roi.x1 : 0) * scaleX;
+      const y1 = Number(roi && roi.y1 ? roi.y1 : 0) * scaleY;
+      const x2 = Number(roi && roi.x2 ? roi.x2 : 0) * scaleX;
+      const y2 = Number(roi && roi.y2 ? roi.y2 : 0) * scaleY;
+      return {
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1),
+      };
+    }
+
+    // 中文註解：在 canvas 上繪製 textbox；輸入為繪圖內容、矩形與 OCR，輸出為帶文字的標註框。
+    function drawCalloutTextBox(context, rect, ocrText) {
+      context.save();
+      context.fillStyle = "rgba(255, 255, 255, .88)";
+      context.strokeStyle = "#dc2626";
+      context.lineWidth = 2;
+      context.fillRect(rect.x, rect.y, rect.width, rect.height);
+      context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      context.fillStyle = "#991b1b";
+      context.font = "700 14px Microsoft JhengHei, Arial, sans-serif";
+      context.textBaseline = "middle";
+      context.textAlign = "center";
+      context.fillText(String(ocrText || ""), rect.x + rect.width / 2, rect.y + rect.height / 2, Math.max(20, rect.width - 8));
+      context.restore();
+    }
+
+    // 中文註解：在 canvas 上繪製箭頭；輸入 arrow roi 與 pointer，輸出從 roi 起點指向 pointer 的箭頭線段。
+    function drawCalloutArrow(context, arrowObject, scaleX, scaleY) {
+      const roi = arrowObject && arrowObject.roi ? arrowObject.roi : {};
+      const startPoint = scaleCalloutPoint({ x: roi.x1, y: roi.y1 }, scaleX, scaleY);
+      const endPoint = scaleCalloutPoint(arrowObject && arrowObject.pointer ? arrowObject.pointer : { x: roi.x2, y: roi.y2 }, scaleX, scaleY);
+      const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+      const headLength = 14;
+
+      context.save();
+      context.strokeStyle = "#dc2626";
+      context.fillStyle = "#dc2626";
+      context.lineWidth = 3;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(startPoint.x, startPoint.y);
+      context.lineTo(endPoint.x, endPoint.y);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(endPoint.x, endPoint.y);
+      context.lineTo(endPoint.x - headLength * Math.cos(angle - Math.PI / 6), endPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      context.lineTo(endPoint.x - headLength * Math.cos(angle + Math.PI / 6), endPoint.y - headLength * Math.sin(angle + Math.PI / 6));
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    // 中文註解：依標註 JSON 內容把符合右側插頭清單的 textbox 與同 groupId arrow 疊到轉換後 Site 圖上。
+    function drawConvertedSiteAnnotations(canvas, image, annotationData, plugNames) {
+      const context = canvas.getContext("2d");
+      const sourceWidth = Number(annotationData && annotationData.width ? annotationData.width : image.naturalWidth) || image.naturalWidth;
+      const sourceHeight = Number(annotationData && annotationData.height ? annotationData.height : image.naturalHeight) || image.naturalHeight;
+      const scaleX = image.naturalWidth / sourceWidth;
+      const scaleY = image.naturalHeight / sourceHeight;
+      const objects = Array.isArray(annotationData && annotationData.objects) ? annotationData.objects : [];
+      const arrowsByGroupId = new Map();
+
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      context.drawImage(image, 0, 0);
+
+      objects.filter((objectItem) => objectItem && objectItem.type === "arrow").forEach((arrowObject) => {
+        const groupId = String(arrowObject.groupId || "");
+        if (!groupId) return;
+        if (!arrowsByGroupId.has(groupId)) arrowsByGroupId.set(groupId, []);
+        arrowsByGroupId.get(groupId).push(arrowObject);
+      });
+
+      objects.filter((objectItem) => objectItem && objectItem.type === "textbox").forEach((textboxObject) => {
+        if (!shouldDrawCalloutText(textboxObject.ocr, plugNames)) return;
+        drawCalloutTextBox(context, scaleCalloutRoi(textboxObject.roi, scaleX, scaleY), textboxObject.ocr);
+        (arrowsByGroupId.get(String(textboxObject.groupId || "")) || []).forEach((arrowObject) => drawCalloutArrow(context, arrowObject, scaleX, scaleY));
+      });
+    }
+
+    // 中文註解：非同步載入轉換後 Site 圖與同名 JSON 後繪製 canvas；輸入為 canvas 容器與路徑，輸出為畫面上的標註圖。
+    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath, plugNames) {
+      if (!canvasWrap) return;
+      const canvas = canvasWrap.querySelector(".converted-site-canvas");
+      const status = canvasWrap.querySelector(".converted-canvas-status");
+      const renderKey = `${imagePath}|${jsonPath}`;
+      canvasWrap.dataset.convertedSiteKey = renderKey;
+      if (!canvas || !status) return;
+
+      function setConvertedStatus(message, isHidden) {
+        status.textContent = message;
+        status.classList.toggle("hidden", Boolean(isHidden));
+      }
+
+      const imageFile = appState.imageFileMap.get(String(imagePath || "").toLowerCase());
+      const jsonFile = findFolderFileByRelativePath(jsonPath);
+      if (!imageFile) {
+        setConvertedStatus(`找不到轉換後圖片：${imagePath || "FileID 空白"}`, false);
+        return;
+      }
+      if (!jsonFile) {
+        setConvertedStatus(`找不到轉換後標註 JSON：${jsonPath || "FileID 空白"}`, false);
+        return;
+      }
+
+      try {
+        setConvertedStatus("轉換後圖片載入中...", false);
+        const [image, annotationData] = await Promise.all([loadImageFile(imageFile), readJsonObjectFile(jsonFile)]);
+        if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
+        drawConvertedSiteAnnotations(canvas, image, annotationData, plugNames);
+        setConvertedStatus("", true);
+      } catch (error) {
+        if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
+        setConvertedStatus(`轉換後圖片繪製失敗：${error.message}`, false);
+      }
+    }
+
     // 中文註解：解析 Document XML 並檢查 parsererror；輸入是 XML 文字，輸出是 DOM Document。
     function parseDocumentXml(xmlText) {
       const parser = new DOMParser();
@@ -2864,6 +3160,8 @@
       const selectedComponent = componentItems[selectedFilteredIndex];
       const sitePath = getPictureRelativePath("PictureList_site", selectedComponent.siteItem);
       const siteFile = appState.imageFileMap.get(sitePath);
+      const convertedSitePath = getConvertedSitePictureRelativePath(selectedComponent.siteItem);
+      const convertedSiteJsonPath = getConvertedSiteJsonRelativePath(selectedComponent.siteItem);
       const selectedSiteFileId = String(selectedComponent.siteItem && selectedComponent.siteItem.FileID ? selectedComponent.siteItem.FileID : "未提供").trim() || "未提供";
       // 中文註解：第五分頁中間位置圖標題需與左側選單名稱一致，並固定補上「位置圖」方便辨識目前圖片用途。
       const selectedSiteTitle = `${selectedComponent.displayName} 位置圖`;
@@ -2898,10 +3196,28 @@
               <ul class="component-list">${componentListHtml}</ul>
             </div>
             <div class="component-image-panel">
-              <div class="site-image-wrap">
-                <div class="component-site-title">${escapeTraditionalHtml(selectedSiteTitle)}</div>
-                <div class="site-image-body">${siteImageHtml}</div>
-                <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+              <div class="component-image-stack">
+                <div class="component-title-section">
+                  <div class="component-site-title">${escapeTraditionalHtml(selectedSiteTitle)}</div>
+                  <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+                </div>
+                <!-- 中文註解：原始檔區沿用目前 PictureList_site 圖片解析結果，左側固定垂直標籤方便與轉換後區塊對照。 -->
+                <div class="component-image-section">
+                  <div class="component-image-side-label">原始檔</div>
+                  <div class="component-image-section-body">
+                    <div class="site-image-wrap"><div class="site-image-body">${siteImageHtml}</div></div>
+                  </div>
+                </div>
+                <!-- 中文註解：轉換後區塊使用 canvas 疊合 restyler 圖與 JSON 標註，讓符合右側插頭清單的 OCR 與箭頭顯示在圖上。 -->
+                <div class="component-image-section">
+                  <div class="component-image-side-label">轉換後</div>
+                  <div class="component-image-section-body">
+                    <div class="converted-canvas-wrap">
+                      <canvas class="converted-site-canvas" aria-label="轉換後位置圖標註"></canvas>
+                      <div class="converted-canvas-status">轉換後圖片載入中...</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2927,6 +3243,7 @@
 
       const componentList = tableContainer.querySelector(".component-list");
       if (componentList) componentList.scrollTop = appState.componentListScrollTop;
+      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath, matchedPlugList);
     }
     // 中文註解：目前畫面已固定為最後一個「元件對應圖」內容；保留統一入口，讓載入 JSON、名稱 JSON、索引 JSON 後都能刷新同一個畫面。
     function renderActiveView() {
