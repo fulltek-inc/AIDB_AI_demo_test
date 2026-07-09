@@ -1647,7 +1647,7 @@
     // 中文註解：找出可作為索引來源的 JSON；輸出包含所有非名稱對應 JSON，避免索引檔不是 index.json 時無法選取。
     function findIndexJsonFiles(files) {
       return files
-        .filter((file) => file.name.toLowerCase().endsWith(".json") && !isCompeJsonFile(file) && !isXmlDocumentUseJsonFile(file))
+        .filter((file) => file.name.toLowerCase().endsWith("index.json") && !isCompeJsonFile(file) && !isXmlDocumentUseJsonFile(file))
         .sort((leftFile, rightFile) => {
           const leftPriority = isExplorerIndexJsonFile(leftFile) ? 0 : 1;
           const rightPriority = isExplorerIndexJsonFile(rightFile) ? 0 : 1;
@@ -1665,7 +1665,7 @@
     // 中文註解：找出資料夾內所有 JSON，並將主要候選檔排在前面，供自動載入與下拉選擇使用。
     function findJsonFiles(files) {
       return files
-        .filter((file) => file.name.toLowerCase().endsWith(".json") && !isCompeJsonFile(file) && !isExplorerIndexJsonFile(file) && !isXmlDocumentUseJsonFile(file))
+        .filter((file) => file.name.toLowerCase().endsWith("_data.json") && !isCompeJsonFile(file) && !isExplorerIndexJsonFile(file) && !isXmlDocumentUseJsonFile(file))
         .sort((leftFile, rightFile) => {
           const leftPriority = isLikelyMainJson(leftFile) ? 0 : 1;
           const rightPriority = isLikelyMainJson(rightFile) ? 0 : 1;
@@ -2240,37 +2240,111 @@
       context.restore();
     }
 
-    // 中文註解：依標註 JSON 內容找出指定插頭名稱對應的 pointer；輸入為 annotationData 與 plugName，輸出為 canvas 座標使用的 pointer 或 null。
-    function findConvertedSitePointerByPlugName(annotationData, plugName) {
-      const objects = Array.isArray(annotationData && annotationData.objects) ? annotationData.objects : [];
-      const ocrList = objects.filter(item => item.type === "textbox").map(item => item.ocr);
-      const bestMatch = ocrList.map(ocr => ({
-        ocr,
-        score: longestCommonSubstring(plugName, ocr)
-      })).sort((a, b) => b.score - a.score)[0];
-
-      // const matchedTextbox = objects.find((objectItem) => objectItem && objectItem.type === "textbox" && shouldDrawCalloutText(objectItem.ocr, [plugName]));
-      const matchedTextbox = objects.find((objectItem) => objectItem && objectItem.type === "textbox" && bestMatch.ocr === objectItem.ocr);
-      if (!matchedTextbox) return null;
-      const matchedArrow = objects.find((objectItem) => objectItem && objectItem.type === "arrow" && String(objectItem.groupId || "") === String(matchedTextbox.groupId || "") && objectItem.pointer);
-      return matchedArrow ? matchedArrow.pointer : null;
+    // 中文註解：正規化插頭與 OCR 比對文字；輸入為任意文字，輸出為轉大寫且移除空白後的字串，避免大小寫與 OCR 空格影響比對。
+    function normalizePointerMatchText(text) {
+      return String(text || "").toUpperCase().replace(/\s+/g, "");
     }
 
-    function longestCommonSubstring(a, b) {
-      let max = 0;
+    // 中文註解：計算兩段文字的 Levenshtein Distance；輸入為已正規化字串，輸出為最少編輯次數，供 OCR 模糊比對排序使用。
+    function calculateLevenshteinDistance(sourceText, targetText) {
+      const source = String(sourceText || "");
+      const target = String(targetText || "");
+      const sourceLength = source.length;
+      const targetLength = target.length;
+      if (!sourceLength) return targetLength;
+      if (!targetLength) return sourceLength;
 
-      for (let i = 0; i < a.length; i++) {
-        for (let j = i + 1; j <= a.length; j++) {
-          const sub = a.slice(i, j);
-          if (b.includes(sub)) {
-            max = Math.max(max, sub.length);
-          }
+      let previousRow = Array.from({ length: targetLength + 1 }, (_, index) => index);
+      for (let sourceIndex = 1; sourceIndex <= sourceLength; sourceIndex += 1) {
+        const currentRow = [sourceIndex];
+        for (let targetIndex = 1; targetIndex <= targetLength; targetIndex += 1) {
+          const replaceCost = source[sourceIndex - 1] === target[targetIndex - 1] ? 0 : 1;
+          currentRow[targetIndex] = Math.min(
+            currentRow[targetIndex - 1] + 1,
+            previousRow[targetIndex] + 1,
+            previousRow[targetIndex - 1] + replaceCost
+          );
         }
+        previousRow = currentRow;
       }
 
-      return max;
+      return previousRow[targetLength];
     }
 
+    // 中文註解：依指定規則評分 plugName 與 OCR；輸入原始文字，輸出含優先層級、分數與距離的物件，完全相同最高，包含關係加分，主要仍依 Levenshtein 距離判斷相似度。
+    function scorePointerTextMatch(plugName, ocrText) {
+      const normalizedPlugName = normalizePointerMatchText(plugName);
+      const normalizedOcrText = normalizePointerMatchText(ocrText);
+      if (!normalizedPlugName || !normalizedOcrText) {
+        return { priority: 0, score: 0, distance: Number.MAX_SAFE_INTEGER, lengthDiff: Number.MAX_SAFE_INTEGER };
+      }
+
+      if (normalizedPlugName === normalizedOcrText) {
+        return { priority: 3, score: 1, distance: 0, lengthDiff: 0 };
+      }
+
+      const maxLength = Math.max(normalizedPlugName.length, normalizedOcrText.length);
+      const lengthDiff = Math.abs(normalizedPlugName.length - normalizedOcrText.length);
+      const distance = calculateLevenshteinDistance(normalizedPlugName, normalizedOcrText);
+      const similarityScore = maxLength ? (maxLength - distance) / maxLength : 0;
+      const hasContainMatch = normalizedPlugName.includes(normalizedOcrText) || normalizedOcrText.includes(normalizedPlugName);
+      const containBonus = hasContainMatch ? 0.1 : 0;
+
+      return { priority: 1, score: Math.min(0.999, similarityScore + containBonus), distance, lengthDiff };
+    }
+
+    // 中文註解：比較兩個 OCR 候選的評分；輸入為候選物件，輸出排序用數字，完全相同優先，其餘依相似分數、距離與長度差選出最接近結果。
+    function comparePointerMatchCandidate(candidateA, candidateB) {
+      if (candidateA.match.priority !== candidateB.match.priority) return candidateB.match.priority - candidateA.match.priority;
+      if (candidateA.match.score !== candidateB.match.score) return candidateB.match.score - candidateA.match.score;
+      if (candidateA.match.distance !== candidateB.match.distance) return candidateA.match.distance - candidateB.match.distance;
+      return candidateA.match.lengthDiff - candidateB.match.lengthDiff;
+    }
+    // 中文註解：建立 textbox OCR 與同群組 arrow pointer 的候選清單；輸入為 annotationData，輸出可供 plugName 預先比對的 OCR-pointer 陣列。
+    function getConvertedSitePointerCandidates(annotationData) {
+      const objects = Array.isArray(annotationData && annotationData.objects) ? annotationData.objects : [];
+      return objects
+        .filter((objectItem) => objectItem && objectItem.type === "textbox" && objectItem.ocr)
+        .map((textboxItem) => {
+          const matchedArrow = objects.find((objectItem) => objectItem && objectItem.type === "arrow" && String(objectItem.groupId || "") === String(textboxItem.groupId || "") && objectItem.pointer);
+          return matchedArrow ? { ocr: textboxItem.ocr, pointer: matchedArrow.pointer } : null;
+        })
+        .filter(Boolean);
+    }
+
+    // 中文註解：預先建立 plugName 對 pointer 的查表資料；輸入為 annotationData 與目前插頭清單，輸出 Map，並避免多個 plugName 重複占用同一個 OCR 結果。
+    function buildConvertedSitePointerLookup(annotationData, plugNames) {
+      const pointerLookup = new Map();
+      const usedOcrKeys = new Set();
+      const candidates = getConvertedSitePointerCandidates(annotationData);
+      const uniquePlugNames = Array.from(new Set((Array.isArray(plugNames) ? plugNames : []).map((plugName) => String(plugName || "").trim()).filter(Boolean)));
+
+      // 中文註解：先把所有 plugName 與 OCR 的可能組合攤平成評分清單，再由高分到低分分配，避免前面 plugName 的區域排序造成重複命中。
+      const rankedMatches = uniquePlugNames
+        .flatMap((plugName) => candidates.map((candidate) => ({
+          plugName,
+          pointer: candidate.pointer,
+          ocr: candidate.ocr,
+          ocrKey: normalizePointerMatchText(candidate.ocr),
+          match: scorePointerTextMatch(plugName, candidate.ocr),
+        })))
+        .filter((candidate) => candidate.pointer && candidate.ocrKey && candidate.match.priority > 0)
+        .sort(comparePointerMatchCandidate);
+
+      rankedMatches.forEach((candidate) => {
+        if (pointerLookup.has(candidate.plugName)) return;
+        if (usedOcrKeys.has(candidate.ocrKey)) return;
+        pointerLookup.set(candidate.plugName, candidate.pointer);
+        usedOcrKeys.add(candidate.ocrKey);
+      });
+
+      return pointerLookup;
+    }
+    // 中文註解：依預先建立的 lookup 找出指定插頭名稱對應 pointer；輸入為 canvasState 與 plugName，輸出為 canvas 座標使用的 pointer 或 null。
+    function findConvertedSitePointerByPlugName(canvasState, plugName) {
+      if (!canvasState || !canvasState.plugPointerLookup) return null;
+      return canvasState.plugPointerLookup.get(String(plugName || "").trim()) || null;
+    }
     // 中文註解：把轉換後 Site 底圖重畫回 canvas；輸入為目前 canvas 狀態，輸出為清除所有箭頭後的乾淨底圖。
     function redrawConvertedSiteBaseImage(canvasState) {
       if (!canvasState || !canvasState.canvas || !canvasState.context || !canvasState.image) return;
@@ -2297,13 +2371,13 @@
     function drawBlinkingPointerArrow(context, pointer, canvasWidth, canvasHeight, alpha) {
       const pointerX = Math.max(0, Math.min(canvasWidth, pointer.x));
       const pointerY = Math.max(0, Math.min(canvasHeight, pointer.y));
-      const arrowLength = Math.max(45, Math.min(90, canvasHeight * 0.16));
+      const arrowLength = Math.max(55, Math.min(105, canvasHeight * 0.18));
       const isNearBottom = pointerY > canvasHeight - arrowLength - 28;
       const startY = isNearBottom ? Math.max(0, pointerY - arrowLength) : Math.min(canvasHeight, pointerY + arrowLength);
       const startPoint = { x: pointerX, y: startY };
       const tipPoint = { x: pointerX, y: pointerY };
       const angle = Math.atan2(tipPoint.y - startPoint.y, tipPoint.x - startPoint.x);
-      const headLength = 26;
+      const headLength = 34;
       const lineEndPoint = {
         x: tipPoint.x - Math.cos(angle) * (headLength * .72),
         y: tipPoint.y - Math.sin(angle) * (headLength * .72),
@@ -2313,12 +2387,11 @@
       const fillColor = blinkRatio > .5 ? "#bef264" : "#facc15";
 
       // 中文註解：先畫較粗的外框箭頭，提供藍白閃爍輪廓；線段終點退到箭頭頭部後方，避免凸出尖端。
-      context.save();
       // context.globalAlpha = alpha;
       // context.strokeStyle = outlineColor;
       // context.fillStyle = outlineColor;
       // context.lineWidth = 18;
-      // context.lineCap = "round";
+      // context.lineCap = "butt";
       // context.lineJoin = "round";
       // context.shadowColor = "rgba(37, 99, 235, .55)";
       // context.shadowBlur = 14;
@@ -2339,8 +2412,8 @@
       context.globalAlpha = alpha;
       context.strokeStyle = fillColor;
       context.fillStyle = fillColor;
-      context.lineWidth = 10;
-      context.lineCap = "round";
+      context.lineWidth = 13;
+      context.lineCap = "butt";
       context.lineJoin = "round";
       context.shadowColor = "rgba(132, 204, 22, .45)";
       context.shadowBlur = 8;
@@ -2350,8 +2423,8 @@
       context.stroke();
       context.beginPath();
       context.moveTo(tipPoint.x, tipPoint.y);
-      context.lineTo(tipPoint.x - headLength * .72 * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * .72 * Math.sin(angle - Math.PI / 6));
-      context.lineTo(tipPoint.x - headLength * .72 * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * .72 * Math.sin(angle + Math.PI / 6));
+      context.lineTo(tipPoint.x - headLength * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      context.lineTo(tipPoint.x - headLength * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * Math.sin(angle + Math.PI / 6));
       context.closePath();
       context.fill();
       context.restore();
@@ -2367,7 +2440,7 @@
       }
 
       stopConvertedSiteArrowAnimation();
-      const rawPointer = findConvertedSitePointerByPlugName(canvasState.annotationData, plugName);
+      const rawPointer = findConvertedSitePointerByPlugName(canvasState, plugName);
       if (!rawPointer) {
         redrawConvertedSiteBaseImage(canvasState);
         return;
@@ -2389,7 +2462,7 @@
     }
 
     // 中文註解：非同步載入轉換後 Site 圖與同名 JSON；輸入為 canvas 容器與路徑，輸出為只有底圖的 canvas 與暫存標註資料。
-    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath) {
+    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath, plugNames = []) {
       stopConvertedSiteArrowAnimation();
       appState.convertedSiteCanvasState = null;
       if (!canvasWrap) return;
@@ -2428,6 +2501,7 @@
           context: canvas.getContext("2d"),
           image,
           annotationData,
+          plugPointerLookup: buildConvertedSitePointerLookup(annotationData, plugNames),
           scaleX: image.naturalWidth / sourceWidth,
           scaleY: image.naturalHeight / sourceHeight,
         };
@@ -3384,7 +3458,7 @@
 
       const componentList = tableContainer.querySelector(".component-list");
       if (componentList) componentList.scrollTop = appState.componentListScrollTop;
-      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath);
+      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath, matchedPlugList);
     }
     // 中文註解：目前畫面已固定為最後一個「元件對應圖」內容；保留統一入口，讓載入 JSON、名稱 JSON、索引 JSON 後都能刷新同一個畫面。
     function renderActiveView() {
