@@ -179,7 +179,8 @@ class SspXmlParserApp:
             messagebox.showerror("執行錯誤", str(exc))
             return
 
-        output_json_path = os.path.splitext(xml_file_path)[0] + ".json"
+        # 中文註解：主資料 JSON 統一加上 _data 後綴，方便與其他輔助 JSON 檔案區分。
+        output_json_path = os.path.splitext(xml_file_path)[0] + "_data.json"
         with open(output_json_path, "w", encoding="utf-8") as output_file:
             json.dump(result_json, output_file, ensure_ascii=False, indent=2)
 
@@ -207,3 +208,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
