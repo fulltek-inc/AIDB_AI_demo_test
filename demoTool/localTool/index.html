@@ -1,0 +1,5359 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>SSP JSON 元件對應圖檢視器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    .app-header {
+      padding: 18px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #d7dde5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .file-picker,
+    .json-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 280px;
+    }
+
+    .file-picker input,
+    .json-picker select {
+      width: 100%;
+      max-width: 420px;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .json-picker.hidden {
+      display: none;
+    }
+
+    .hint-text {
+      color: #64748b;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .summary {
+      padding: 14px 24px;
+      color: #475569;
+      border-bottom: 1px solid #d7dde5;
+      background: #eef3f8;
+      font-size: 14px;
+    }
+
+
+    .top-toggle-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 24px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-bottom: 1px solid #1e293b;
+      font-size: 13px;
+    }
+
+    .top-toggle-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-toggle-button {
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #f8fafc;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .top-toggle-button:hover {
+      background: #334155;
+    }
+
+    body.top-collapsed .app-header,
+    body.top-collapsed .summary {
+      display: none;
+    }
+
+    body.top-collapsed .content.compare-content {
+      height: calc(100vh - 44px);
+    }
+
+    .content {
+      padding: 18px 24px 28px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eaf1fb;
+      color: #1e3a5f;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .image-column {
+      width: 54px;
+      text-align: center;
+    }
+
+    .image-button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .image-button:hover {
+      background: #dbeafe;
+      border-color: #60a5fa;
+    }
+
+    .image-button:disabled {
+      color: #94a3b8;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      padding: 36px 20px;
+      color: #64748b;
+      text-align: center;
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, .48);
+      backdrop-filter: blur(2px);
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .loading-panel {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      width: min(360px, 88vw);
+      padding: 28px 24px;
+      color: #0f172a;
+      text-align: center;
+      background: #ffffff;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
+    }
+
+    .loading-spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid #dbeafe;
+      border-top-color: #2563eb;
+      border-radius: 999px;
+      animation: loading-spin .8s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    @keyframes loading-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .image-dialog {
+      width: min(92vw, 980px);
+      max-height: 90vh;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .34);
+    }
+
+    .image-dialog::backdrop {
+      background: rgba(15, 23, 42, .58);
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #d7dde5;
+      background: #545a67;
+    }
+
+    .dialog-title {
+      min-width: 0;
+      margin: 0;
+      color: #1e293b;
+      font-size: 15px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .dialog-close {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .dialog-body {
+      min-height: 220px;
+      max-height: calc(90vh - 60px);
+      padding: 16px;
+      overflow: auto;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .dialog-body img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .document-dialog {
+      width: min(98vw, 1680px);
+      max-height: 94vh;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: #08101d;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .38);
+    }
+
+    .document-dialog::backdrop {
+      background: rgba(15, 23, 42, .62);
+    }
+
+    .document-dialog .dialog-header {
+      border-bottom-color: rgba(148, 180, 220, .18);
+      background: #46556d;
+    }
+
+    .document-dialog .dialog-title {
+      color: #eff7ff;
+    }
+
+    .document-dialog .dialog-close {
+      border-color: rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .06);
+      color: #dbe8fb;
+    }
+
+    .document-dialog-body {
+      max-height: calc(94vh - 60px);
+      padding: 18px;
+      overflow: auto;
+      background: #484848;
+      color: #dbe8fb;
+      text-align: left;
+    }
+
+    .document-compare-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+      min-height: min(760px, calc(94vh - 96px));
+    }
+
+    .document-compare-panel {
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      border: 1px solid rgba(148, 180, 220, .22);
+      border-radius: 8px;
+      background: rgba(8, 16, 29, .34);
+      overflow: hidden;
+    }
+
+    .document-compare-heading {
+      margin: 0;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(148, 180, 220, .20);
+      background: rgba(70, 85, 109, .72);
+      color: #eff7ff;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .document-compare-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .original-document-panel .document-compare-content {
+      padding: 0;
+      background: #ffffff;
+    }
+
+    .original-document-view {
+      min-height: 100%;
+      padding: 10px 8px 28px;
+      background: #ffffff;
+      color: #111827;
+      font-family: "Microsoft JhengHei", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-document-title {
+      margin: 0 0 14px;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-document-section-title {
+      margin: 18px 0 34px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .original-document-core-title {
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .original-process {
+      margin: 0 0 24px;
+    }
+
+    .original-process-title {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-step-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 48%) minmax(180px, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin: 12px 0;
+    }
+
+    .original-step-row+.original-step-row {
+      margin-top: 14px;
+    }
+
+    .original-step-row-no-graphic {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .original-step-graphics,
+    .original-step-text {
+      min-width: 0;
+    }
+
+    .original-step-text ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .original-step-text li {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-step-text p {
+      margin: 0;
+    }
+
+    .original-document-view .hotspot,
+    .original-image-number {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .original-document-view .xml-use-image-wrap {
+      margin: 0 0 12px;
+      padding: 0;
+      border: 1px solid #5f6368;
+      border-radius: 0;
+      background: #ffffff;
+    }
+
+    .original-document-view .xml-use-image-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .original-document-view .placeholder {
+      margin: 0 0 12px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .original-more-info {
+      margin: 0 0 16px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-more-info a,
+    .original-hint-links a {
+      color: #1d4ed8;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+
+    .original-repair-hints {
+      margin: 0 0 20px;
+    }
+
+    .original-hint-box {
+      margin: 16px 0;
+      border: 1px solid transparent;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-hint-box.warning {
+      border-color: #ff8a1c;
+      background: #ffe0bd;
+    }
+
+    .original-hint-box.damage {
+      border-color: #1a8fcb;
+      background: #9ee3ff;
+    }
+    .original-hint-box.info {
+      border-color: #3b82f6;
+      background: #dbeafe;
+    }
+
+    .original-hint-box.info .original-hint-header {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .original-hint-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 26px;
+      padding: 3px 12px;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .original-hint-box.warning .original-hint-header {
+      background: #ff8617;
+      color: #111827;
+    }
+
+    .original-hint-box.damage .original-hint-header {
+      background: #0b75b4;
+      color: #ffffff;
+    }
+
+    .original-hint-icon {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .original-hint-body {
+      margin: 0 10px 12px;
+      padding: 12px 14px;
+      background: #ffffff;
+    }
+
+    .original-hint-box.warning .original-hint-body {
+      background: #ffffff;
+    }
+
+    .original-hint-box.damage .original-hint-body {
+      background: #ffffff;
+    }
+
+    .original-hint-main {
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+
+    .original-hint-detail {
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+
+    .original-hint-list {
+      margin: 6px 0 0 18px;
+      padding: 0;
+    }
+
+    .original-hint-list li {
+      margin: 0 0 2px;
+      padding-left: 2px;
+    }
+
+    .original-hint-links {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0 0 18px;
+    }
+    .original-generic-block {
+      margin: 8px 0;
+    }
+
+    .original-generic-block p {
+      margin: 0 0 6px;
+    }
+
+    .original-generic-title {
+      margin: 10px 0 6px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .original-document-links {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 10px 18px;
+    }
+
+    .original-document-link {
+      color: #1d4ed8;
+      text-decoration: underline;
+      font-weight: 700;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .original-functional-view {
+      min-height: 100%;
+      padding: 22px 16px 32px;
+      background: #ffffff;
+      color: #111827;
+      font-family: "Microsoft JhengHei", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-functional-title {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-functional-section-title {
+      margin: 14px 0 8px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-functional-view p {
+      margin: 0 0 2px;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-functional-view strong {
+      font-weight: 700;
+    }
+
+    .original-functional-figure {
+      margin: 28px 0 22px;
+    }
+
+    .original-functional-figure .xml-use-image-wrap {
+      margin: 0;
+      padding: 0;
+      border: 2px solid #a8aeb8;
+      border-radius: 0;
+      background: #ffffff;
+    }
+
+    .original-functional-figure .xml-use-image-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .original-functional-view table {
+      width: 100%;
+      margin: 10px 0 28px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      color: #111827;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .original-functional-view th,
+    .original-functional-view td {
+      padding: 6px 8px;
+      border: 1px solid #8f8f8f;
+      background: #ffffff;
+      color: #111827;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .original-functional-view th {
+      font-weight: 700;
+    }
+
+    .original-functional-view th p,
+    .original-functional-view td p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .original-functional-view .placeholder {
+      margin: 12px 0 24px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    @media (max-width: 960px) {
+      .document-dialog {
+        width: min(98vw, 760px);
+      }
+
+      .document-dialog-body {
+        overflow: auto;
+      }
+
+      .document-compare-layout {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+      }
+
+      .document-compare-content {
+        max-height: 62vh;
+      }
+
+      .original-step-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .document-page-subtitle {
+      margin: 0 0 20px;
+      color: #8fa7c6;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .document-dialog-body .html-view {
+      color: #dbe8fb;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .document-dialog-body .html-view h2 {
+      margin: 14px 0 8px;
+      color: #eff7ff;
+      font-size: 15px;
+    }
+
+    .document-dialog-body .html-view p {
+      margin: 4px 0;
+    }
+
+    .document-dialog-body .html-view ul {
+      margin: 6px 0 6px 20px;
+      padding: 0;
+    }
+
+    .document-dialog-body .html-view li {
+      margin: 3px 0;
+    }
+
+    .document-dialog-body .html-view table {
+      width: 100%;
+      margin: 10px 0;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 13px;
+    }
+
+    .document-dialog-body .html-view th,
+    .document-dialog-body .html-view td {
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      vertical-align: top;
+    }
+
+    .document-dialog-body .html-view th {
+      background: rgba(73, 166, 255, .16);
+      color: #ecf6ff;
+    }
+
+    .document-dialog-body .placeholder {
+      margin: 8px 0;
+      padding: 16px;
+      border: 1px dashed rgba(255, 255, 255, .18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .04);
+      color: #8fa7c6;
+      font-style: italic;
+    }
+
+    .xml-use-image-wrap {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .xml-use-image-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .xml-use-image-caption {
+      margin-top: 8px;
+      color: #8fa7c6;
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .document-dialog-body .doc-title {
+      margin: 0 0 14px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      background: linear-gradient(to bottom, #3a8ee8, #1a6dcc);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .document-dialog-body #inner-content {
+      padding: 0 2px 8px;
+    }
+
+    .document-dialog-body section.intro,
+    .document-dialog-body section.chapter,
+    .document-dialog-body section.subsection {
+      margin: 0;
+      padding: 0;
+    }
+
+    .document-dialog-body .repair-doc {
+      padding-bottom: 8px;
+    }
+
+    .document-dialog-body .repair-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin: 10px 0 12px;
+      color: #b8d7ff;
+      font-size: 13px;
+    }
+
+    .document-dialog-body .repair-meta span {
+      padding: 2px 10px;
+      border: 1px solid rgba(148, 180, 220, .28);
+      border-radius: 999px;
+      background: rgba(73, 166, 255, .12);
+    }
+
+    .document-dialog-body .repair-process {
+      margin-top: 14px;
+    }
+
+    .document-dialog-body .repair-step {
+      padding: 14px 0;
+      border-top: 1px solid rgba(148, 180, 220, .22);
+    }
+
+    .document-dialog-body .repair-step:first-child {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .document-dialog-body .repair-step-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: #dbeafe;
+      font-weight: 700;
+    }
+
+    .document-dialog-body .repair-step-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #1e6dc0;
+      color: #ffffff;
+      font-size: 13px;
+    }
+
+    .document-dialog-body .repair-hint {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #49a6ff;
+      border-radius: 4px;
+      background: rgba(73, 166, 255, .10);
+    }
+
+    .document-dialog-body .repair-hint.attention {
+      border-left-color: #f59e0b;
+      background: rgba(245, 158, 11, .12);
+    }
+
+    .document-dialog-body .repair-hint-title {
+      margin: 0 0 4px;
+      color: #eff7ff;
+      font-weight: 700;
+    }
+
+    .document-dialog-body .repair-inline-icon-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 6px;
+    }
+
+    .document-dialog-body .repair-inline-icon-row .xml-use-image-wrap {
+      flex: 0 0 auto;
+      width: 30px;
+      margin: 0;
+      padding: 3px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .document-dialog-body .repair-inline-icon-row .xml-use-image-wrap img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .document-dialog-body .repair-inline-icon-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .document-dialog-body .repair-inline-icon-text p {
+      margin: 0;
+    }
+
+    .document-dialog-body .repair-tech-info-block {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #38bdf8;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, .10);
+    }
+
+    .document-dialog-body .repair-tech-info-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: -10px -12px 10px;
+      padding: 6px 10px;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid rgba(56, 189, 248, .36);
+      background: rgba(56, 189, 248, .20);
+    }
+
+    .document-dialog-body .repair-tech-info-title-row .xml-use-image-wrap {
+      flex: 0 0 auto;
+      width: 26px;
+      margin: 0;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .document-dialog-body .repair-tech-info-title-row .xml-use-image-wrap img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .document-dialog-body .repair-tech-info-title-text {
+      min-width: 0;
+      color: #e0f7ff;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .document-dialog-body .repair-tech-info-body p {
+      margin: 0 0 6px;
+    }
+    .document-dialog-body .repair-signal-row {
+      margin: -10px -12px 10px;
+      padding: 6px 10px;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(255, 255, 255, .16);
+      font-weight: 700;
+    }
+
+    .document-dialog-body .repair-hint.attention .repair-signal-row {
+      background: rgba(245, 158, 11, .22);
+      border-bottom-color: rgba(245, 158, 11, .38);
+    }
+
+    .document-dialog-body .repair-signal-row .xml-use-image-wrap {
+      width: 28px;
+      padding: 2px;
+      border-color: rgba(255, 255, 255, .28);
+    }
+
+    .document-dialog-body .repair-signal-row .repair-inline-icon-text {
+      font-size: 14px;
+      line-height: 1.35;
+      color: #eff7ff;
+    }
+
+    .document-dialog-body .hotspot {
+      color: #93c5fd;
+      text-decoration: underline;
+      cursor: help;
+      font-weight: 600;
+    }
+    .document-dialog-body .repair-document-list {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .document-dialog-body .repair-document-link {
+      color: #93c5fd;
+      text-decoration: underline;
+      cursor: help;
+      font-weight: 600;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .document-dialog-body .html-view tr.highlight-row>th,
+    .document-dialog-body .html-view tr.highlight-row>td {
+      background: #298cff;
+      color: #ffffff;
+    }
+
+    .document-dialog-body .xml-list {
+      margin: 4px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .document-dialog-body .xml-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .document-dialog-body .xml-list-label {
+      flex: 0 0 auto;
+      min-width: 14px;
+      color: #1a4070;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+
+    .document-dialog-body .xml-list-body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .document-dialog-body .xml-list-body p {
+      margin: 0;
+    }
+
+    .document-dialog-body .xml-list-body p+p {
+      margin-top: 4px;
+    }
+
+
+    .content.compare-content {
+      height: calc(100vh - 128px);
+      overflow: hidden;
+    }
+
+    .compare-layout {
+      position: relative;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 1.15fr) minmax(320px, .85fr);
+      gap: 16px;
+    }
+
+    .compare-left,
+    .compare-right {
+      min-height: 0;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .compare-left {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .site-toolbar {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .site-toolbar label {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .site-image-wrap {
+      position: relative;
+      min-height: 0;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+    }
+
+    /* 中文註解：第五分頁中間圖區改為「標題／原始檔／轉換後」三段，限定在 component-image-panel 內避免影響第四分頁共用圖片樣式。 */
+    .component-image-panel .site-image-wrap {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      background: transparent;
+    }
+
+    .component-image-stack {
+      min-height: 0;
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+
+    .component-title-section {
+      position: relative;
+      min-height: 48px;
+      padding: 10px 128px 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .component-image-section {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .component-image-side-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+      border-right: 1px solid #d7dde5;
+      background: #eaf1fb;
+      color: #1e3a5f;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    .component-image-section-body {
+      min-width: 0;
+      min-height: 0;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    .component-image-panel .site-image-body {
+      flex: 1 1 auto;
+      height: 100%;
+    }
+
+    .converted-image-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .converted-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .converted-site-canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .converted-canvas-status {
+      position: absolute;
+      inset: 0;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+      background: rgba(255, 255, 255, .88);
+    }
+
+    .converted-canvas-status.hidden {
+      display: none;
+    }
+
+    .component-site-title {
+      width: 100%;
+      color: #1e293b;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .site-file-id {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      max-width: calc(100% - 24px);
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .92);
+      color: #334155;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.2;
+      word-break: break-word;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .10);
+    }
+
+    .component-title-section .site-file-id {
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+    }
+
+    .site-image-body {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .site-image-body img,
+    .pin-drawer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .compare-right {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .pin-list-title {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #1e293b;
+      font-size: 14px;
+      font-weight: 700;
+      background: #bccef6;
+    }
+
+    .raw-name-list {
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .raw-name-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 13px;
+      line-height: 1.45;
+      cursor: pointer;
+    }
+
+    .raw-name-item:hover {
+      background: #88d2f873;
+    }
+
+    .raw-name-text {
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .site-select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .pin-button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .pin-button:disabled {
+      color: #94a3b8;
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .component-left {
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+
+    .component-main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(220px, .35fr) minmax(260px, .65fr);
+      gap: 0;
+    }
+
+    .component-list-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-right: 1px solid #e2e8f0;
+      background: #ffffff;
+    }
+
+    .component-search-wrap {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .component-search-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #1f2937;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .component-filter-toggle {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .component-filter-toggle::before {
+      content: "";
+      width: 15px;
+      height: 15px;
+      background: currentColor;
+      clip-path: polygon(0 0, 100% 0, 62% 46%, 62% 100%, 38% 100%, 38% 46%);
+    }
+
+    .component-filter-toggle:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .component-filter-toggle.active {
+      background: #dbeafe;
+      border-color: #60a5fa;
+      color: #1d4ed8;
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, .3);
+    }
+
+    .component-list {
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+      background: #ffffff;
+    }
+
+    .component-list-item {
+      width: 100%;
+      padding: 11px 12px;
+      border: 0;
+      border-bottom: 1px solid #edf2f7;
+      background: #ffffff;
+      color: #334155;
+      text-align: left;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+      word-break: break-word;
+      cursor: pointer;
+    }
+
+    .component-list-item:hover {
+      background: #f1f5f9;
+    }
+
+    .component-list-item.active {
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    .component-image-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+
+    .component-compare-right {
+      display: grid;
+      grid-template-rows: minmax(160px, .9fr) minmax(220px, .9fr);
+      gap: 10px;
+      background: #f4f6f8;
+      border: none;
+    }
+
+    .component-right-section {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+      background: #ffffff;
+      border-radius: 10px;
+      border: 1px solid #d7dde5;
+    }
+
+    .component-right-section+.component-right-section {
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .index-tree {
+      min-height: 0;
+      padding: 8px 10px 14px;
+      overflow: auto;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    .index-tree details {
+      margin: 0;
+      overflow: visible;
+      background: transparent;
+    }
+
+    .index-tree summary {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 4px 8px 4px 24px;
+      color: #1e293b;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+      border-radius: 5px;
+    }
+
+    .index-tree summary:hover {
+      background: #f1f5f9;
+    }
+
+    .index-tree summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .index-tree summary::before {
+      content: '▸';
+      position: absolute;
+      left: 7px;
+      top: 50%;
+      color: #64748b;
+      font-size: 11px;
+      transform: translateY(-50%);
+    }
+
+    .index-tree details[open]>summary::before {
+      content: '▾';
+    }
+
+    .index-node-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .index-node-icon {
+      flex: 0 0 auto;
+      width: 18px;
+      text-align: center;
+      color: #2563eb;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .index-tree .index-branch>summary {
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .index-tree .index-branch .index-node-icon {
+      color: #0f766e;
+    }
+
+    .index-node-list {
+      position: relative;
+      margin: 0 0 0 18px;
+      padding: 0 0 0 16px;
+      border-left: 1px solid #cbd5e1;
+    }
+
+    .index-node-list>.index-branch,
+    .index-node-list>.index-leaf {
+      position: relative;
+    }
+
+    .index-node-list>.index-branch::before,
+    .index-node-list>.index-leaf::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 15px;
+      width: 14px;
+      border-top: 1px solid #cbd5e1;
+    }
+
+    .index-leaf {
+      width: calc(100% - 4px);
+      min-height: 30px;
+      margin: 0 4px 0 0;
+      padding: 5px 8px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    .index-leaf-button {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      cursor: pointer;
+    }
+
+    .index-leaf-button:hover,
+    .index-leaf-button:focus {
+      background: #eff6ff;
+      outline: none;
+    }
+
+    .index-leaf strong {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: #1f2937;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .index-leaf small {
+      display: block;
+      margin-left: 25px;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .index-count {
+      flex: 0 0 auto;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pin-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(430px, 92%);
+      height: 100%;
+      background: #ffffff;
+      border-left: 1px solid #d7dde5;
+      box-shadow: -20px 0 48px rgba(15, 23, 42, .18);
+      transform: translateX(106%);
+      transition: transform .22s ease;
+      z-index: 5;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .pin-drawer.open {
+      transform: translateX(0);
+    }
+
+    .pin-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .pin-drawer-title {
+      margin: 0;
+      min-width: 0;
+      color: #1e293b;
+      word-break: break-word;
+    }
+
+    .pin-drawer-title-name {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .pin-drawer-title-path {
+      display: block;
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .drawer-close {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .pin-drawer-body {
+      min-height: 0;
+      padding: 14px;
+      overflow: auto;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      background: #ffffff;
+    }
+
+    .pin-image-section {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid #d7dde5;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .pin-image-heading {
+      margin: 0;
+      padding: 9px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #eaf1fb;
+      color: #1e3a5f;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .pin-image-content {
+      min-height: 0;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+
+    @media (max-width: 720px) {
+
+      .app-header,
+      .summary,
+      .content {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .controls,
+      .file-picker,
+      .json-picker {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top-toggle-bar">
+    <span
+      id="topToggleTitle"
+      class="top-toggle-title"
+    >資料載入區已展開</span>
+    <button
+      id="topToggleButton"
+      class="top-toggle-button"
+      type="button"
+    >收合載入區</button>
+  </div>
+  <header class="app-header">
+    <h1>SSP JSON 元件對應圖檢視器</h1>
+    <div class="controls">
+      <label class="file-picker">
+        <span>選擇資料夾</span>
+        <input
+          id="folderInput"
+          type="file"
+          webkitdirectory
+          directory
+          multiple
+        >
+        <span class="hint-text">請選 JSON 所在的車型資料夾</span>
+      </label>
+      <label
+        id="jsonPicker"
+        class="json-picker hidden"
+      >
+        <span>JSON 檔</span>
+        <select id="jsonSelect"></select>
+      </label>
+      <label
+        id="compePicker"
+        class="json-picker hidden"
+      >
+        <span>名稱 JSON</span>
+        <select id="compeSelect"></select>
+      </label>
+      <label
+        id="indexJsonPicker"
+        class="json-picker hidden"
+      >
+        <span>索引 JSON</span>
+        <select id="indexJsonSelect"></select>
+      </label>
+    </div>
+  </header>
+
+  <div
+    id="summary"
+    class="summary"
+  >正在自動讀取 data 資料夾，若未啟動本機伺服器也可手動選擇資料夾。</div>
+  <div
+    id="loadErrors"
+    class="summary load-errors hidden"
+  ></div>
+
+
+  <main
+    id="content"
+    class="content compare-content"
+  >
+    <section
+      id="tableContainer"
+      class="empty-state"
+    >尚未載入資料。</section>
+  </main>
+
+
+  <div
+    id="loadingOverlay"
+    class="loading-overlay hidden"
+    role="status"
+    aria-live="polite"
+    aria-busy="true"
+  >
+    <div class="loading-panel">
+      <div
+        class="loading-spinner"
+        aria-hidden="true"
+      ></div>
+      <div
+        id="loadingText"
+        class="loading-text"
+      >正在載入 JSON...</div>
+    </div>
+  </div>
+  <dialog
+    id="imageDialog"
+    class="image-dialog"
+  >
+    <div class="dialog-header">
+      <p
+        id="dialogTitle"
+        class="dialog-title"
+      >圖片預覽</p>
+      <button
+        id="dialogCloseButton"
+        class="dialog-close"
+        type="button"
+        aria-label="關閉"
+      >×</button>
+    </div>
+    <div
+      id="dialogBody"
+      class="dialog-body"
+    ></div>
+  </dialog>
+
+  <dialog
+    id="documentDialog"
+    class="document-dialog"
+  >
+    <div class="dialog-header">
+      <p
+        id="documentDialogTitle"
+        class="dialog-title"
+      >文件預覽</p>
+      <button
+        id="documentDialogCloseButton"
+        class="dialog-close"
+        type="button"
+        aria-label="關閉"
+      >×</button>
+    </div>
+    <div
+      id="documentDialogBody"
+      class="document-dialog-body"
+    ></div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/opencc-js/dist/umd/full.js"></script>
+  <script>
+    // 中文註解：集中管理目前載入的 JSON、資料夾檔案、圖片索引、過濾資料，以及固定顯示的元件對應圖頁面狀態。
+    const appState = {
+      activeTab: "ComponentCompare",
+      rawData: null,
+      compeData: {},
+      indexData: null,
+      xmlDocumentUseData: {},
+      currentJsonFile: null,
+      currentCompeFile: null,
+      currentIndexJsonFile: null,
+      currentImageUrl: "",
+      currentPinDrawerUrls: [],
+      folderFiles: [],
+      parsedJsonCache: new Map(),
+      loadErrors: [],
+      autoLoadCompleted: false,
+      jsonFiles: [],
+      compeFiles: [],
+      indexJsonFiles: [],
+      xmlDocumentUseFiles: [],
+      imageFileMap: new Map(),
+      xmlUseImageFileMap: new Map(),
+      documentImageUrls: [],
+      convertedSiteCanvasState: null,
+      convertedSiteArrowFrameId: 0,
+      activeConvertedSitePinKey: "",
+      selectedSiteIndex: 0,
+      selectedComponentIndex: 0,
+      componentSearchKeyword: "",
+      componentCompareItemsCache: null,
+      componentFilterLookup: null,
+      componentFilterEligibilityMap: new Map(),
+      componentRequirePlugImageAndDocument: false,
+      componentListScrollTop: 0,
+      componentSearchTimer: null,
+      filteredData: {
+        ProjectList: [],
+        PictureList_site: [],
+        PictureList_pin: [],
+      },
+    };
+
+    // 中文註解：定義基礎資料清單的欄位順序；雖然畫面固定為元件對應圖，仍保留給圖片預覽與資料整理流程使用。
+    const tableColumns = {
+      ProjectList: [
+        "SSPNb",
+        "FactCls",
+        "Name_CN",
+        "FactFileName",
+        "ParentName",
+        "Specify_AutoInt",
+        "Specify_Nb",
+        "Specify_Tw",
+        "includeObjectName",
+      ],
+      PictureList_site: [
+        "FileID",
+        "Name_CN",
+        "PictureType",
+        "ParentName",
+        "INFOOBJECTID",
+      ],
+      PictureList_pin: [
+        "FileID",
+        "Name_CN",
+        "PictureType",
+        "ParentName",
+        "INFOOBJECTID",
+      ],
+    };
+
+    const folderInput = document.getElementById("folderInput");
+    const topToggleButton = document.getElementById("topToggleButton");
+    const topToggleTitle = document.getElementById("topToggleTitle");
+    const jsonPicker = document.getElementById("jsonPicker");
+    const jsonSelect = document.getElementById("jsonSelect");
+    const compePicker = document.getElementById("compePicker");
+    const compeSelect = document.getElementById("compeSelect");
+    const indexJsonPicker = document.getElementById("indexJsonPicker");
+    const indexJsonSelect = document.getElementById("indexJsonSelect");
+    const summaryElement = document.getElementById("summary");
+    const loadErrorsElement = document.getElementById("loadErrors");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingText = document.getElementById("loadingText");
+    const tableContainer = document.getElementById("tableContainer");
+    const imageDialog = document.getElementById("imageDialog");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const dialogBody = document.getElementById("dialogBody");
+    const dialogCloseButton = document.getElementById("dialogCloseButton");
+    const documentDialog = document.getElementById("documentDialog");
+    const documentDialogTitle = document.getElementById("documentDialogTitle");
+    const documentDialogBody = document.getElementById("documentDialogBody");
+    const documentDialogCloseButton = document.getElementById("documentDialogCloseButton");
+
+    // 中文註解：建立 OpenCC 簡體轉繁體轉換器；輸入為頁面要顯示的文字，輸出為台灣繁體文字。
+    const openccConverter = window.OpenCC
+      ? window.OpenCC.Converter({ from: "cn", to: "tw" })
+      : null;
+
+    // 中文註解：將外部 JSON/XML 名稱轉成繁體；若 CDN 載入失敗或轉換出錯，回傳原文避免畫面中斷。
+    function convertTextToTraditional(value) {
+      const text = formatCellValue(value);
+      if (!openccConverter || !text) {
+        return text;
+      }
+
+      try {
+        return openccConverter(text);
+      } catch (error) {
+        return text;
+      }
+    }
+
+    // 中文註解：設定純文字節點顯示值；輸入為 DOM 節點與原始文字，輸出為已轉繁體的畫面文字。
+    function setTraditionalText(element, value) {
+      if (element) element.textContent = convertTextToTraditional(value);
+    }
+
+    // 中文註解：產生可安全插入 HTML 的繁體文字；輸入可為字串、陣列或物件，輸出為已 escape 的字串。
+    function escapeTraditionalHtml(value) {
+      return escapeHtml(convertTextToTraditional(value));
+    }
+
+
+
+    // 中文註解：切換上方載入區顯示狀態；收合後保留細控制列，避免誤點並增加內容可視高度。
+    function setTopCollapsed(isCollapsed) {
+      document.body.classList.toggle("top-collapsed", isCollapsed);
+      setTraditionalText(topToggleButton, isCollapsed ? "展開載入區" : "收合載入區");
+      setTraditionalText(topToggleTitle, isCollapsed ? "資料載入區已收合" : "資料載入區已展開");
+      renderActiveView();
+    }
+
+    // 中文註解：顯示全畫面 loading 遮罩；輸入為提示文字，輸出為阻擋操作並提示目前正在載入 JSON。
+    function showLoading(message) {
+      if (loadingText) {
+        loadingText.textContent = message || "正在載入 JSON...";
+      }
+      if (loadingOverlay) {
+        loadingOverlay.classList.remove("hidden");
+      }
+    }
+
+    // 中文註解：關閉全畫面 loading 遮罩；無輸入，輸出為恢復頁面操作狀態。
+    function hideLoading() {
+      if (loadingOverlay) {
+        loadingOverlay.classList.add("hidden");
+      }
+    }
+    // 中文註解：使用者點擊控制列按鈕時，依目前 body class 反向切換收合狀態。
+    function toggleTopPanel() {
+      setTopCollapsed(!document.body.classList.contains("top-collapsed"));
+    }
+
+    // 中文註解：判斷單筆資料是否帶有「找不到檔案」註記；符合時畫面不顯示該筆資料。
+    function isMissingFileNote(item) {
+      const noteText = String(item && item._note ? item._note : "").toLowerCase();
+      return noteText.includes("file not found") || noteText.includes("找不到檔案");
+    }
+
+    // 中文註解：安全取得指定資料清單；若 JSON 缺少欄位或不是陣列，回傳空陣列避免畫面錯誤。
+    function getList(data, listName) {
+      return Array.isArray(data && data[listName]) ? data[listName] : [];
+    }
+
+
+
+    // 中文註解：統一取得 PictureList 的 Name_CN 陣列；若來源是字串也轉成陣列方便後續比對。
+    function getNameList(item) {
+      const rawName = item && item.Name_CN;
+      if (Array.isArray(rawName)) {
+        return rawName.map((value) => String(value).trim()).filter(Boolean);
+      }
+      const textName = String(rawName || "").trim();
+      return textName ? [textName] : [];
+    }
+
+    // 中文註解：從瀏覽器提供的資料夾相對路徑或 server 回傳路徑取得 data 內相對路徑；輸入是 File 或遠端檔案描述，輸出供圖片/XML/JSON 查找使用。
+    function getFolderRelativePath(file) {
+      if (!file) return "";
+      if (file.relativePath) return String(file.relativePath).replaceAll("\\", "/");
+      const rawPath = file.webkitRelativePath || file.name;
+      const pathParts = rawPath.split("/");
+      return pathParts.length > 1 ? pathParts.slice(1).join("/") : rawPath;
+    }
+
+    // 中文註解：將 /api/files 回傳的資料轉成類 File 物件；輸入是 server 檔案資訊，輸出可重用既有分類與相對路徑邏輯的描述物件。
+    function createRemoteFileInfo(fileInfo) {
+      return {
+        name: fileInfo.name,
+        relativePath: fileInfo.relativePath,
+        url: fileInfo.url,
+        size: fileInfo.size,
+        isRemote: true,
+      };
+    }
+
+    // 中文註解：建立可放入 img/canvas 的檔案網址；輸入可為遠端檔案或瀏覽器 File，輸出 URL 字串。
+    function createFileObjectUrl(file) {
+      if (!file) return "";
+      if (file.isRemote && file.url) return file.url;
+      return URL.createObjectURL(file);
+    }
+
+    // 中文註解：只釋放 blob 暫存網址；輸入可能是 HTTP URL 或 ObjectURL，輸出為安全釋放後的瀏覽器資源狀態。
+    function revokeBlobUrl(fileUrl) {
+      if (String(fileUrl || "").startsWith("blob:")) {
+        URL.revokeObjectURL(fileUrl);
+      }
+    }
+
+    // 中文註解：建立圖片檔索引，輸入是資料夾內所有檔案，輸出是小寫相對路徑到 File 物件的 Map；Pin 轉換後圖片會放在 Output/picture/pin/。
+    function buildImageFileMap(files) {
+      const imageFileMap = new Map();
+      files.forEach((file) => {
+        const relativePath = getFolderRelativePath(file).replaceAll("\\", "/").toLowerCase();
+        if (relativePath.startsWith("picture/site/") || relativePath.startsWith("picture/pin/") || relativePath.startsWith("output/picture/site/") || relativePath.startsWith("output/picture/pin/")) {
+          imageFileMap.set(relativePath, file);
+        }
+      });
+      return imageFileMap;
+    }
+
+    // 中文註解：建立 XML 文件內嵌圖片索引；輸入是資料夾檔案，輸出為 Picture/XmlUse 檔名到 File 的 Map。
+    function buildXmlUseImageFileMap(files) {
+      const xmlUseImageFileMap = new Map();
+      files.forEach((file) => {
+        const relativePath = getFolderRelativePath(file).replaceAll("\\", "/").toLowerCase();
+        if (relativePath.startsWith("picture/xmluse/")) {
+          const fileName = relativePath.split("/").pop();
+          if (fileName) xmlUseImageFileMap.set(fileName, file);
+        }
+      });
+      return xmlUseImageFileMap;
+    }
+
+
+
+    // 中文註解：判斷 JSON 是否為 extract_compe_plugs_gui.py 輸出的名稱對應檔。
+    function isCompeJsonFile(file) {
+      return file.name.toLowerCase().endsWith(".json") && file.name.toLowerCase().includes("_compe_plugs");
+    }
+
+    // 中文註解：找出資料夾內所有名稱對應 JSON，若有多個會提供下拉選單切換。
+    function findCompeJsonFiles(files) {
+      return files
+        .filter(isCompeJsonFile)
+        .sort((leftFile, rightFile) => getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile)));
+    }
+
+    // 中文註解：判斷 JSON 是否為 XML 文件圖片對應檔；檔案內容用 GRAPHIC SRC 對應 Picture/XmlUse 實際檔名。
+    function isXmlDocumentUseJsonFile(file) {
+      return file.name.toLowerCase().endsWith(".json") && file.name.toLowerCase().includes("_xml_document_use");
+    }
+
+    // 中文註解：找出資料夾內所有 XML 文件圖片對應 JSON；若有多個，排序後自動讀取第一個。
+    function findXmlDocumentUseJsonFiles(files) {
+      return files
+        .filter(isXmlDocumentUseJsonFile)
+        .sort((leftFile, rightFile) => getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile)));
+    }
+
+    // 中文註解：判斷 JSON 是否為 explorer.html 預設使用的 index.json；排序時會優先顯示，方便使用者快速選到索引檔。
+    function isExplorerIndexJsonFile(file) {
+      return file.name.toLowerCase() === "index.json";
+    }
+
+    // 中文註解：找出可作為索引來源的 JSON；輸出包含所有非名稱對應 JSON，避免索引檔不是 index.json 時無法選取。
+    function findIndexJsonFiles(files) {
+      return files
+        .filter((file) => file.name.toLowerCase().endsWith("index.json") && !isCompeJsonFile(file) && !isXmlDocumentUseJsonFile(file))
+        .sort((leftFile, rightFile) => {
+          const leftPriority = isExplorerIndexJsonFile(leftFile) ? 0 : 1;
+          const rightPriority = isExplorerIndexJsonFile(rightFile) ? 0 : 1;
+          if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+          return getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile));
+        });
+    }
+
+    // 中文註解：判斷 JSON 是否較像主要資料檔；排序時讓 index 與輔助 JSON 排在後面，降低誤選機率。
+    function isLikelyMainJson(file) {
+      const fileName = file.name.toLowerCase();
+      return fileName !== "index.json" && !fileName.includes("_compe_plugs");
+    }
+
+    // 中文註解：找出資料夾內所有 JSON，並將主要候選檔排在前面，供自動載入與下拉選擇使用。
+    function findJsonFiles(files) {
+      return files
+        .filter((file) => file.name.toLowerCase().endsWith("_data.json") && !isCompeJsonFile(file) && !isExplorerIndexJsonFile(file) && !isXmlDocumentUseJsonFile(file))
+        .sort((leftFile, rightFile) => {
+          const leftPriority = isLikelyMainJson(leftFile) ? 0 : 1;
+          const rightPriority = isLikelyMainJson(rightFile) ? 0 : 1;
+          if (leftPriority !== rightPriority) {
+            return leftPriority - rightPriority;
+          }
+          return getFolderRelativePath(leftFile).localeCompare(getFolderRelativePath(rightFile));
+        });
+    }
+
+    // 中文註解：依 FileID 去除重複圖片資料；保留第一筆，避免同一張圖在列表中重複顯示。
+    function uniqueByFileId(items) {
+      const usedFileIds = new Set();
+      return items.filter((item) => {
+        const fileId = String(item && item.FileID ? item.FileID : "").trim();
+        if (!fileId) {
+          return true;
+        }
+
+        if (usedFileIds.has(fileId)) {
+          return false;
+        }
+
+        usedFileIds.add(fileId);
+        return true;
+      });
+    }
+
+    // 中文註解：讀取原始 JSON 後建立畫面要用的資料；圖片清單同時會過濾 _note 並依 FileID 去重。
+    function buildFilteredData(data) {
+      const pictureListSite = getList(data, "PictureList_site").filter((item) => !isMissingFileNote(item));
+      const pictureListPin = getList(data, "PictureList_pin").filter((item) => !isMissingFileNote(item));
+
+      return {
+        ProjectList: getList(data, "ProjectList").filter((item) => !isMissingFileNote(item)),
+        PictureList_site: uniqueByFileId(pictureListSite),
+        PictureList_pin: uniqueByFileId(pictureListPin),
+      };
+    }
+
+    // 中文註解：依目前 tab 判斷圖片所在資料夾；ProjectList 不需要圖片欄位所以回傳空字串。
+    function getPictureFolderName(tabName) {
+      if (tabName === "PictureList_site") {
+        return "site";
+      }
+
+      if (tabName === "PictureList_pin") {
+        return "pin";
+      }
+
+      return "";
+    }
+
+    // 中文註解：依 PictureList 資料的 FileID 組出相對圖片路徑，用於查找資料夾檔案索引。
+    function getPictureRelativePath(tabName, rowItem) {
+      const folderName = getPictureFolderName(tabName);
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+
+      if (!folderName || !fileId) {
+        return "";
+      }
+
+      return `picture/${folderName}/${fileId}.png`;
+    }
+
+    // 中文註解：確認指定 PictureList 資料是否已在選取資料夾中找到對應圖片。
+    function hasPictureFile(tabName, rowItem) {
+      const picturePath = getPictureRelativePath(tabName, rowItem);
+      return picturePath ? appState.imageFileMap.has(picturePath) : false;
+    }
+
+    // 中文註解：將儲存格內容轉成可閱讀文字；陣列欄位用逗號串接，物件則保留 JSON 格式方便檢查。
+    function formatCellValue(value) {
+      if (Array.isArray(value)) {
+        return value.join(", ");
+      }
+
+      if (value && typeof value === "object") {
+        return JSON.stringify(value);
+      }
+
+      return value === undefined || value === null ? "" : String(value);
+    }
+
+    // 中文註解：避免 JSON 內容直接塞入 HTML 時破壞標籤或造成不必要的腳本執行風險。
+    function escapeHtml(value) {
+      return formatCellValue(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+
+
+    // 中文註解：從 Site 的 Name_CN 取得查找 key；優先用不含 * 的值，若沒有才改用含 * 的原始值。
+    function getSiteLookupKeys(siteItem) {
+      const originalNames = getNameList(siteItem);
+      const nonPlugKeys = originalNames.filter((name) => !name.includes("*"));
+      return nonPlugKeys.length > 0 ? nonPlugKeys : originalNames;
+    }
+
+    // 中文註解：使用 _compe_plugs.json 將 key 轉為中文名稱；查不到時顯示該筆 PictureList_site 的原始 Name_CN。
+    function resolveComponentNames(siteItem) {
+      const keys = getSiteLookupKeys(siteItem);
+      const originalNames = getNameList(siteItem);
+      const resolvedNames = [];
+      keys.forEach((key) => {
+        const matchItems = Array.isArray(appState.compeData[key]) ? appState.compeData[key] : [];
+        matchItems.forEach((matchItem) => {
+          const name = String(matchItem && matchItem.name ? matchItem.name : "").trim();
+          if (name && !resolvedNames.includes(name)) resolvedNames.push(name);
+        });
+      });
+      return resolvedNames.length > 0 ? resolvedNames.join(" / ") : (originalNames.join(" / ") || "未命名項目");
+    }
+
+    // 中文註解：依原始 Name_CN 值去 PictureList_pin 內找第一筆對應資料，供右側列表顯示 icon。
+    function findPinItemByName(nameText) {
+      return appState.filteredData.PictureList_pin.find((pinItem) => getNameList(pinItem).includes(nameText)) || null;
+    }
+
+    // 中文註解：Pin 圖片一律從 Picture/Pin 查找，用於右側滑出面板。
+    function getPinPictureRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `picture/pin/${fileId}.png` : "";
+    }
+
+    // 中文註解：依原始 Pin 圖片路徑推導轉換後圖片；輸入為 picture/pin/xxx.png，輸出為 Output/picture/pin/xxx_n.png。
+    function getConvertedPinPictureRelativePath(rowItem) {
+      const originalPath = getPinPictureRelativePath(rowItem);
+      if (!originalPath) return "";
+      return originalPath.replace(/([^/\\]+)\.png$/i, "$1.restyler.png").replace(/^/, "Output/");
+    }
+
+
+    // 中文註解：依 Site 位置圖 FileID 推導轉換後圖片；輸入為 PictureList_site 資料列，輸出為 Output/Picture/Site/{FileID}.restyler.png。
+    function getConvertedSitePictureRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `output/picture/site/${fileId}.restyler.png` : "";
+    }
+
+    // 中文註解：依 Site 位置圖 FileID 推導轉換後標註 JSON；輸入為 PictureList_site 資料列，輸出為 Output/Picture/Site/{FileID}.restyler.json。
+    function getConvertedSiteJsonRelativePath(rowItem) {
+      const fileId = String(rowItem && rowItem.FileID ? rowItem.FileID : "").trim();
+      return fileId ? `output/picture/site/${fileId}.restyler.json` : "";
+    }
+
+    // 中文註解：依元件 key 對應 PictureList_site；輸入為 _compe_plugs 的 key，輸出為第一筆對應 Site 圖資料。
+    function findSiteItemByComponentKey(componentKey) {
+      return appState.filteredData.PictureList_site.find((siteItem) => getNameList(siteItem).includes(componentKey)) || null;
+    }
+
+    // 中文註解：確認 plug 名稱是否完全相等存在於 PictureList_site 的 Name_CN 清單。
+    function hasMatchingSiteNameForPlug(plugName) {
+      const targetPlugName = String(plugName || "").trim();
+      if (!targetPlugName) return false;
+      return appState.filteredData.PictureList_site.some((siteItem) => getNameList(siteItem).includes(targetPlugName));
+    }
+
+    // 中文註解：建立第 5 分頁可顯示的元件清單；以 key.name 合併重複名稱，plugList 也同步合併去重。
+    function buildComponentCompareItems() {
+      const excludedNames = new Set(["中繼接頭", "節點"]);
+      const itemMap = new Map();
+      Object.keys(appState.compeData || {}).sort().forEach((componentKey) => {
+        const siteItem = findSiteItemByComponentKey(componentKey);
+        if (!siteItem) return;
+
+        const groupItems = Array.isArray(appState.compeData[componentKey]) ? appState.compeData[componentKey] : [];
+        groupItems.forEach((groupItem) => {
+          const componentName = String(groupItem && groupItem.name ? groupItem.name : "").trim();
+          if (!componentName || excludedNames.has(componentName)) return;
+
+          const displayName = `${componentKey}.${componentName}`;
+          const mapKey = displayName;
+          const targetItem = itemMap.get(mapKey) || { key: componentKey, name: componentName, displayName, plugList: [], siteItem };
+          const plugList = Array.isArray(groupItem.plugList) ? groupItem.plugList.map((plugName) => String(plugName).trim()).filter(Boolean) : [];
+          plugList.forEach((plugName) => {
+            if (!targetItem.plugList.includes(plugName)) targetItem.plugList.push(plugName);
+          });
+          itemMap.set(mapKey, targetItem);
+        });
+      });
+      return Array.from(itemMap.values());
+    }
+
+    // 中文註解：取得第 5 分頁元件清單快取；輸入／輸出走 appState，避免點選左側項目時重複掃描 _compe_plugs 與 Site 圖資料。
+    function getComponentCompareItems() {
+      if (!appState.componentCompareItemsCache) {
+        appState.componentCompareItemsCache = buildComponentCompareItems();
+      }
+      return appState.componentCompareItemsCache;
+    }
+
+    // 中文註解：將搜尋文字統一轉成小寫並去掉前後空白；輸入是任意值，輸出是可安全比對的字串。
+    function normalizeSearchText(value) {
+      return convertTextToTraditional(value).trim().toLocaleLowerCase("zh-Hant");
+    }
+
+    // 中文註解：清除左側過濾快取；輸入／輸出皆無，資料來源變更時呼叫，避免沿用舊 JSON 或舊圖片索引結果。
+    function invalidateComponentFilterCache() {
+      appState.componentCompareItemsCache = null;
+      appState.componentFilterLookup = null;
+      appState.componentFilterEligibilityMap = new Map();
+    }
+
+    // 中文註解：建立左側過濾用查找索引；輸出包含 Site 名稱、可開啟 Pin 圖名稱與文件名稱文字，避免每次點選都掃完整資料。
+    function buildComponentFilterLookup() {
+      const siteNameSet = new Set();
+      appState.filteredData.PictureList_site.forEach((siteItem) => {
+        getNameList(siteItem).forEach((siteName) => siteNameSet.add(siteName));
+      });
+
+      const availablePinNameSet = new Set();
+      appState.filteredData.PictureList_pin.forEach((pinItem) => {
+        const pinPath = getPinPictureRelativePath(pinItem);
+        if (!pinPath || !appState.imageFileMap.has(pinPath)) return;
+        getNameList(pinItem).forEach((pinName) => availablePinNameSet.add(pinName));
+      });
+
+      const documentNames = [];
+      if (appState.currentIndexJsonFile) {
+        Object.values(appState.indexData || {}).forEach((parents) => {
+          Object.values(parents || {}).forEach((records) => {
+            Object.keys(records || {}).forEach((nameCn) => documentNames.push(normalizeSearchText(nameCn)));
+          });
+        });
+      }
+
+      return {
+        siteNameSet,
+        availablePinNameSet,
+        documentNameText: documentNames.join("\n"),
+      };
+    }
+
+    // 中文註解：取得左側過濾查找索引；輸入／輸出皆走 appState，首次使用才建立，後續點選重繪可直接重用。
+    function getComponentFilterLookup() {
+      if (!appState.componentFilterLookup) {
+        appState.componentFilterLookup = buildComponentFilterLookup();
+      }
+      return appState.componentFilterLookup;
+    }
+
+    // 中文註解：判斷元件是否至少有一筆可開啟的插頭圖片；輸入是左側元件資料，輸出布林值供過濾按鈕使用。
+    function hasAvailablePlugImage(componentItem) {
+      const lookup = getComponentFilterLookup();
+      return componentItem.plugList.some((plugName) => lookup.siteNameSet.has(plugName) && lookup.availablePinNameSet.has(plugName));
+    }
+
+    // 中文註解：判斷索引 JSON 中是否有符合元件名稱的文件；輸入是元件中文名稱，輸出布林值避免只靠畫面字串判斷。
+    function hasMatchingIndexDocument(componentName) {
+      const query = normalizeSearchText(componentName);
+      if (!query) return false;
+      return getComponentFilterLookup().documentNameText.includes(query);
+    }
+
+    // 中文註解：過濾左側選單到同時具備插頭圖片與相關文件的元件；輸入是元件資料，輸出布林值供清單渲染使用。
+    function hasPlugImageAndDocument(componentItem) {
+      const cacheKey = componentItem.displayName;
+      if (appState.componentFilterEligibilityMap.has(cacheKey)) {
+        return appState.componentFilterEligibilityMap.get(cacheKey);
+      }
+      const isEligible = hasAvailablePlugImage(componentItem) && hasMatchingIndexDocument(componentItem.name);
+      appState.componentFilterEligibilityMap.set(cacheKey, isEligible);
+      return isEligible;
+    }
+
+    // 中文註解：取得目前左側實際可見的元件清單；輸入／輸出走 appState，會同時套用搜尋字與過濾按鈕狀態。
+    function getVisibleComponentItems() {
+      const allComponentItems = getComponentCompareItems();
+      const keyword = normalizeSearchText(appState.componentSearchKeyword);
+      return allComponentItems.filter((componentItem) => {
+        if (appState.componentRequirePlugImageAndDocument && !hasPlugImageAndDocument(componentItem)) return false;
+        if (!keyword) return true;
+        const plugText = normalizeSearchText(componentItem.plugList.join(" "));
+        return normalizeSearchText(componentItem.displayName).includes(keyword) || plugText.includes(keyword);
+      });
+    }
+
+    // 中文註解：從相對路徑取出檔名；輸入可能是 picture/site/xxx.png，輸出只保留 xxx.png 供匯出 JSON 使用。
+    function getFileNameFromRelativePath(relativePath) {
+      return String(relativePath || "").replaceAll("\\", "/").split("/").filter(Boolean).pop() || "";
+    }
+
+    // 中文註解：將 Document 索引中的 FactFileName 正規化成 XML 檔名；輸入可有可無副檔名，輸出固定為 .xml 檔名。
+    function normalizeDocumentFileName(factFileName) {
+      const cleanFactFileName = String(factFileName || "").trim();
+      if (!cleanFactFileName) return "";
+      return cleanFactFileName.toLowerCase().endsWith(".xml") ? cleanFactFileName : `${cleanFactFileName}.xml`;
+    }
+
+    // 中文註解：依元件名稱找出目前索引 JSON 中符合的文件檔名；輸入是元件中文名稱，輸出為去重後的 XML 檔名清單。
+    function getDocumentFileNamesByComponentName(componentName) {
+      const query = normalizeSearchText(componentName);
+      const fileNameSet = new Set();
+      if (!query || !appState.currentIndexJsonFile) return [];
+
+      Object.values(appState.indexData || {}).forEach((parents) => {
+        Object.values(parents || {}).forEach((records) => {
+          Object.keys(records || {}).forEach((nameCn) => {
+            if (!normalizeSearchText(nameCn).includes(query)) return;
+            const fileName = normalizeDocumentFileName((records[nameCn] || {}).FactFileName);
+            if (fileName) fileNameSet.add(fileName);
+          });
+        });
+      });
+
+      return Array.from(fileNameSet);
+    }
+
+    // 中文註解：收集目前篩選後清單的 site/pin/doc 檔名；輸入／輸出皆為純資料，不觸動畫面，供隱藏下載指令使用。
+    function buildFilteredComponentListExportData() {
+      const siteSet = new Set();
+      const pinSet = new Set();
+      const docSet = new Set();
+
+      getVisibleComponentItems().forEach((componentItem) => {
+        const siteFileName = getFileNameFromRelativePath(getPictureRelativePath("PictureList_site", componentItem.siteItem));
+        if (siteFileName) siteSet.add(siteFileName);
+
+        componentItem.plugList.forEach((plugName) => {
+          if (!hasMatchingSiteNameForPlug(plugName)) return;
+          const pinItem = findPinItemByName(plugName);
+          const pinPath = pinItem ? getPinPictureRelativePath(pinItem) : "";
+          if (!pinPath || !appState.imageFileMap.has(pinPath)) return;
+          const pinFileName = getFileNameFromRelativePath(pinPath);
+          if (pinFileName) pinSet.add(pinFileName);
+        });
+
+        getDocumentFileNamesByComponentName(componentItem.name).forEach((fileName) => docSet.add(fileName));
+      });
+
+      return {
+        site: Array.from(siteSet),
+        pin: Array.from(pinSet),
+        doc: Array.from(docSet),
+      };
+    }
+
+    // 中文註解：隱藏 Console 指令；輸入／輸出皆無，會把目前篩選後清單下載成 JSON 檔案。
+    function downloadFilteredComponentListJson() {
+      const exportData = buildFilteredComponentListExportData();
+      const jsonText = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "filtered_component_list.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+      return exportData;
+    }
+
+    window.downloadFilteredComponentListJson = downloadFilteredComponentListJson;
+    // 中文註解：建立左側搜尋列 HTML；輸入目前搜尋字與過濾狀態，輸出含圖示按鈕的搜尋控制列。
+    function renderComponentSearchControlsHtml() {
+      const activeClass = appState.componentRequirePlugImageAndDocument ? " active" : "";
+      const pressedText = appState.componentRequirePlugImageAndDocument ? "true" : "false";
+      return `
+        <div class="component-search-wrap">
+          <input id="componentSearchInput" class="component-search-input" type="search" value="${escapeHtml(appState.componentSearchKeyword)}" placeholder="搜尋元件或 plugList">
+          <button id="componentFilterToggle" class="component-filter-toggle${activeClass}" type="button" aria-label="只顯示同時有插頭圖片與文件的資料" aria-pressed="${pressedText}" title="只顯示同時有插頭圖片與文件的資料" data-console-command="downloadFilteredComponentListJson()"></button>
+        </div>
+      `;
+    }
+
+    // 中文註解：建立 explorer.html 格式索引樹；只用目前 componentName 篩選 nameCn，不混入 key 或 plugList。
+    function renderIndexTreeHtml(componentName) {
+      if (!appState.currentIndexJsonFile) {
+        return '<div class="empty-state">尚未載入索引 JSON。</div>';
+      }
+
+      const indexData = appState.indexData || {};
+      const query = normalizeSearchText(componentName);
+      const documentTypes = Object.keys(indexData).sort((leftName, rightName) => leftName.localeCompare(rightName, "zh-Hant"));
+      const groupHtml = [];
+      let totalMatches = 0;
+
+      documentTypes.forEach((documentType) => {
+        const parents = indexData[documentType] || {};
+        const parentHtml = [];
+
+        Object.keys(parents).sort((leftName, rightName) => leftName.localeCompare(rightName, "zh-Hant")).forEach((parentName) => {
+          const records = parents[parentName] || {};
+          const matchedNames = Object.keys(records)
+            .sort((leftName, rightName) => leftName.localeCompare(rightName, "zh-Hant"))
+            .filter((nameCn) => !query || normalizeSearchText(nameCn).includes(query));
+
+          if (matchedNames.length === 0) return;
+          totalMatches += matchedNames.length;
+          const leafHtml = matchedNames.map((nameCn) => {
+            const record = records[nameCn] || {};
+            return `
+              <button
+                class="index-leaf index-leaf-button"
+                type="button"
+                data-document-type="${escapeHtml(documentType)}"
+                data-parent-name="${escapeHtml(parentName)}"
+                data-name-cn="${escapeHtml(nameCn)}"
+                data-xml-nb="${escapeHtml(record.XmlNb || "")}"
+                data-fact-file-name="${escapeHtml(record.FactFileName || "")}"
+                title="開啟 HTML 顯示文件"
+              >
+                <strong><span class="index-node-icon" aria-hidden="true">&#128196;</span><span>${escapeTraditionalHtml(nameCn)}</span></strong>
+                <small>XmlNb: ${escapeHtml(record.XmlNb || "-")} | FactFileName: ${escapeHtml(record.FactFileName || "-")}</small>
+              </button>
+            `;
+          }).join("");
+
+          parentHtml.push(`
+            <details class="index-branch" open>
+              <summary><span class="index-node-label"><span class="index-node-icon" aria-hidden="true">&#128193;</span><span>${escapeTraditionalHtml(parentName)}</span></span><span class="index-count">${matchedNames.length} 項</span></summary>
+              <div class="index-node-list">${leafHtml}</div>
+            </details>
+          `);
+        });
+
+        if (parentHtml.length === 0) return;
+        groupHtml.push(`
+          <details class="index-group" open>
+            <summary><span class="index-node-label"><span class="index-node-icon" aria-hidden="true">&#128193;</span><span>${escapeTraditionalHtml(documentType)}</span></span><span class="index-count">${parentHtml.length} 群組</span></summary>
+            <div class="index-node-list">${parentHtml.join("")}</div>
+          </details>
+        `);
+      });
+
+      if (groupHtml.length === 0) {
+        return `<div class="empty-state">索引 JSON 中找不到符合「${escapeTraditionalHtml(componentName || "空白名稱")}」的文件。</div>`;
+      }
+
+      return `${groupHtml.join("")}`;
+    }
+
+    // 中文註解：讀取文字檔；輸入可為手動選取的 File 或 server 檔案描述，輸出是 UTF-8 文字，供 JSON/XML 解析使用。
+    async function readTextFile(file) {
+      if (!file) throw new Error("未提供檔案");
+
+      if (file.isRemote && file.url) {
+        const response = await fetch(file.url, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}，無法讀取 ${getFolderRelativePath(file)}`);
+        }
+        return response.text();
+      }
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("讀取檔案失敗"));
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    // 中文註解：把索引資料的 FactFileName 正規化成不含副檔名的基礎檔名；輸入可含 .xml，輸出供原始檔與轉換後檔共用。
+    function normalizeDocumentBaseName(factFileName) {
+      return String(factFileName || "").trim().replace(/\.xml$/i, "");
+    }
+
+    // 中文註解：依文件類型組出預期相對路徑；輸入為 FactFileName 與 original/converted，輸出為資料夾內要尋找的 XML 路徑。
+    function getDocumentRelativePath(factFileName, documentKind) {
+      const baseName = normalizeDocumentBaseName(factFileName);
+      if (!baseName) return "";
+      if (documentKind === "converted") return `Output/Document/${baseName}_n.xml`;
+      return `Document/${baseName}.xml`;
+    }
+
+    // 中文註解：用已選根資料夾中的相對路徑尋找檔案；輸入為相對路徑，輸出為瀏覽器 File 物件或 null。
+    function findFolderFileByRelativePath(relativePath) {
+      const targetPath = String(relativePath || "").replaceAll("\\", "/").toLowerCase();
+      if (!targetPath) return null;
+      return appState.folderFiles.find((file) => getFolderRelativePath(file).replaceAll("\\", "/").toLowerCase() === targetPath) || null;
+    }
+
+    // 中文註解：依索引資料的 FactFileName 找出指定版本的 Document XML；輸入為檔名與版本，輸出為資料夾內對應 File。
+    function findDocumentXmlFile(factFileName, documentKind) {
+      return findFolderFileByRelativePath(getDocumentRelativePath(factFileName, documentKind));
+    }
+
+    // 中文註解：讀取並解析資料夾內的 JSON 檔；輸入是 File 或遠端檔案描述，輸出為物件，並用相對路徑快取避免重複解析。
+    async function readJsonObjectFile(file) {
+      const relativePath = getFolderRelativePath(file);
+      if (relativePath && appState.parsedJsonCache.has(relativePath)) {
+        return appState.parsedJsonCache.get(relativePath);
+      }
+
+      const jsonText = await readTextFile(file);
+      const parsedData = JSON.parse(jsonText);
+      if (relativePath) appState.parsedJsonCache.set(relativePath, parsedData);
+      return parsedData;
+    }
+
+    // 中文註解：載入圖片；輸入可為瀏覽器 File 或 server 檔案描述，輸出已可繪製到 canvas 的 Image 物件。
+    function loadImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const imageUrl = createFileObjectUrl(file);
+        const image = new Image();
+        image.onload = () => {
+          revokeBlobUrl(imageUrl);
+          resolve(image);
+        };
+        image.onerror = () => {
+          revokeBlobUrl(imageUrl);
+          reject(new Error(`圖片載入失敗：${getFolderRelativePath(file)}`));
+        };
+        image.src = imageUrl;
+      });
+    }
+
+    // 中文註解：正規化 OCR 與插頭名稱比對文字；輸入任意文字，輸出移除空白並轉小寫的比對 key。
+    function normalizeCalloutMatchText(value) {
+      return String(value || "").replace(/\s+/g, "").toLowerCase();
+    }
+
+    // 中文註解：判斷 OCR 是否出現在右側插頭清單；輸入 OCR 與目前顯示 plugList，輸出是否需要繪製該標註。
+    function shouldDrawCalloutText(ocrText, plugNames) {
+      const ocrKey = normalizeCalloutMatchText(ocrText);
+      if (!ocrKey) return false;
+      return plugNames.some((plugName) => {
+        const plugKey = normalizeCalloutMatchText(plugName);
+        return plugKey && (ocrKey.includes(plugKey) || plugKey.includes(ocrKey));
+      });
+    }
+
+    // 中文註解：把標註 JSON 的座標依圖片實際尺寸縮放；輸入為原始座標、JSON 尺寸與圖片尺寸，輸出 canvas 座標。
+    function scaleCalloutPoint(point, scaleX, scaleY) {
+      return {
+        x: Number(point && point.x ? point.x : 0) * scaleX,
+        y: Number(point && point.y ? point.y : 0) * scaleY,
+      };
+    }
+
+    // 中文註解：把 roi 轉為 canvas 矩形；輸入 JSON roi 與縮放比例，輸出 x/y/width/height。
+    function scaleCalloutRoi(roi, scaleX, scaleY) {
+      const x1 = Number(roi && roi.x1 ? roi.x1 : 0) * scaleX;
+      const y1 = Number(roi && roi.y1 ? roi.y1 : 0) * scaleY;
+      const x2 = Number(roi && roi.x2 ? roi.x2 : 0) * scaleX;
+      const y2 = Number(roi && roi.y2 ? roi.y2 : 0) * scaleY;
+      return {
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1),
+      };
+    }
+
+    // 中文註解：在 canvas 上繪製 textbox；輸入為繪圖內容、矩形與 OCR，輸出為帶文字的標註框。
+    function drawCalloutTextBox(context, rect, ocrText) {
+      context.save();
+      context.fillStyle = "rgba(255, 255, 255, .88)";
+      context.strokeStyle = "#dc2626";
+      context.lineWidth = 2;
+      context.fillRect(rect.x, rect.y, rect.width, rect.height);
+      context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      context.fillStyle = "#991b1b";
+      context.font = "700 14px Microsoft JhengHei, Arial, sans-serif";
+      context.textBaseline = "middle";
+      context.textAlign = "center";
+      context.fillText(String(ocrText || ""), rect.x + rect.width / 2, rect.y + rect.height / 2, Math.max(20, rect.width - 8));
+      context.restore();
+    }
+
+    // 中文註解：在 canvas 上繪製箭頭；輸入 arrow roi 與 pointer，輸出從 roi 起點指向 pointer 的箭頭線段。
+    function drawCalloutArrow(context, arrowObject, scaleX, scaleY) {
+      const roi = arrowObject && arrowObject.roi ? arrowObject.roi : {};
+      const startPoint = scaleCalloutPoint({ x: roi.x1, y: roi.y1 }, scaleX, scaleY);
+      const endPoint = scaleCalloutPoint(arrowObject && arrowObject.pointer ? arrowObject.pointer : { x: roi.x2, y: roi.y2 }, scaleX, scaleY);
+      const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+      const headLength = 14;
+
+      context.save();
+      context.strokeStyle = "#dc2626";
+      context.fillStyle = "#dc2626";
+      context.lineWidth = 3;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(startPoint.x, startPoint.y);
+      context.lineTo(endPoint.x, endPoint.y);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(endPoint.x, endPoint.y);
+      context.lineTo(endPoint.x - headLength * Math.cos(angle - Math.PI / 6), endPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      context.lineTo(endPoint.x - headLength * Math.cos(angle + Math.PI / 6), endPoint.y - headLength * Math.sin(angle + Math.PI / 6));
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    // 中文註解：正規化插頭與 OCR 比對文字；輸入為任意文字，輸出為轉大寫且移除空白後的字串，避免大小寫與 OCR 空格影響比對。
+    function normalizePointerMatchText(text) {
+      return String(text || "").toUpperCase().replace(/\s+/g, "");
+    }
+
+    // 中文註解：計算兩段文字的 Levenshtein Distance；輸入為已正規化字串，輸出為最少編輯次數，供 OCR 模糊比對排序使用。
+    function calculateLevenshteinDistance(sourceText, targetText) {
+      const source = String(sourceText || "");
+      const target = String(targetText || "");
+      const sourceLength = source.length;
+      const targetLength = target.length;
+      if (!sourceLength) return targetLength;
+      if (!targetLength) return sourceLength;
+
+      let previousRow = Array.from({ length: targetLength + 1 }, (_, index) => index);
+      for (let sourceIndex = 1; sourceIndex <= sourceLength; sourceIndex += 1) {
+        const currentRow = [sourceIndex];
+        for (let targetIndex = 1; targetIndex <= targetLength; targetIndex += 1) {
+          const replaceCost = source[sourceIndex - 1] === target[targetIndex - 1] ? 0 : 1;
+          currentRow[targetIndex] = Math.min(
+            currentRow[targetIndex - 1] + 1,
+            previousRow[targetIndex] + 1,
+            previousRow[targetIndex - 1] + replaceCost
+          );
+        }
+        previousRow = currentRow;
+      }
+
+      return previousRow[targetLength];
+    }
+
+    // 中文註解：依指定規則評分 plugName 與 OCR；輸入原始文字，輸出含優先層級、分數與距離的物件，完全相同最高，包含關係加分，主要仍依 Levenshtein 距離判斷相似度。
+    function scorePointerTextMatch(plugName, ocrText) {
+      const normalizedPlugName = normalizePointerMatchText(plugName);
+      const normalizedOcrText = normalizePointerMatchText(ocrText);
+      if (!normalizedPlugName || !normalizedOcrText) {
+        return { priority: 0, score: 0, distance: Number.MAX_SAFE_INTEGER, lengthDiff: Number.MAX_SAFE_INTEGER };
+      }
+
+      if (normalizedPlugName === normalizedOcrText) {
+        return { priority: 3, score: 1, distance: 0, lengthDiff: 0 };
+      }
+
+      const maxLength = Math.max(normalizedPlugName.length, normalizedOcrText.length);
+      const lengthDiff = Math.abs(normalizedPlugName.length - normalizedOcrText.length);
+      const distance = calculateLevenshteinDistance(normalizedPlugName, normalizedOcrText);
+      const similarityScore = maxLength ? (maxLength - distance) / maxLength : 0;
+      const hasContainMatch = normalizedPlugName.includes(normalizedOcrText) || normalizedOcrText.includes(normalizedPlugName);
+      const containBonus = hasContainMatch ? 0.1 : 0;
+
+      return { priority: 1, score: Math.min(0.999, similarityScore + containBonus), distance, lengthDiff };
+    }
+
+    // 中文註解：比較兩個 OCR 候選的評分；輸入為候選物件，輸出排序用數字，完全相同優先，其餘依相似分數、距離與長度差選出最接近結果。
+    function comparePointerMatchCandidate(candidateA, candidateB) {
+      if (candidateA.match.priority !== candidateB.match.priority) return candidateB.match.priority - candidateA.match.priority;
+      if (candidateA.match.score !== candidateB.match.score) return candidateB.match.score - candidateA.match.score;
+      if (candidateA.match.distance !== candidateB.match.distance) return candidateA.match.distance - candidateB.match.distance;
+      return candidateA.match.lengthDiff - candidateB.match.lengthDiff;
+    }
+    // 中文註解：建立 textbox OCR 與同群組 arrow pointer 的候選清單；輸入為 annotationData，輸出可供 plugName 預先比對的 OCR-pointer 陣列。
+    function getConvertedSitePointerCandidates(annotationData) {
+      const objects = Array.isArray(annotationData && annotationData.objects) ? annotationData.objects : [];
+      return objects
+        .filter((objectItem) => objectItem && objectItem.type === "textbox" && objectItem.ocr)
+        .map((textboxItem) => {
+          const matchedArrow = objects.find((objectItem) => objectItem && objectItem.type === "arrow" && String(objectItem.groupId || "") === String(textboxItem.groupId || "") && objectItem.pointer);
+          return matchedArrow ? { ocr: textboxItem.ocr, pointer: matchedArrow.pointer } : null;
+        })
+        .filter(Boolean);
+    }
+
+    // 中文註解：預先建立 plugName 對 pointer 的查表資料；輸入為 annotationData 與目前插頭清單，輸出 Map，並避免多個 plugName 重複占用同一個 OCR 結果。
+    function buildConvertedSitePointerLookup(annotationData, plugNames) {
+      const pointerLookup = new Map();
+      const usedOcrKeys = new Set();
+      const candidates = getConvertedSitePointerCandidates(annotationData);
+      const uniquePlugNames = Array.from(new Set((Array.isArray(plugNames) ? plugNames : []).map((plugName) => String(plugName || "").trim()).filter(Boolean)));
+
+      // 中文註解：先把所有 plugName 與 OCR 的可能組合攤平成評分清單，再由高分到低分分配，避免前面 plugName 的區域排序造成重複命中。
+      const rankedMatches = uniquePlugNames
+        .flatMap((plugName) => candidates.map((candidate) => ({
+          plugName,
+          pointer: candidate.pointer,
+          ocr: candidate.ocr,
+          ocrKey: normalizePointerMatchText(candidate.ocr),
+          match: scorePointerTextMatch(plugName, candidate.ocr),
+        })))
+        .filter((candidate) => candidate.pointer && candidate.ocrKey && candidate.match.priority > 0)
+        .sort(comparePointerMatchCandidate);
+
+      rankedMatches.forEach((candidate) => {
+        if (pointerLookup.has(candidate.plugName)) return;
+        if (usedOcrKeys.has(candidate.ocrKey)) return;
+        pointerLookup.set(candidate.plugName, candidate.pointer);
+        usedOcrKeys.add(candidate.ocrKey);
+      });
+
+      return pointerLookup;
+    }
+    // 中文註解：依預先建立的 lookup 找出指定插頭名稱對應 pointer；輸入為 canvasState 與 plugName，輸出為 canvas 座標使用的 pointer 或 null。
+    function findConvertedSitePointerByPlugName(canvasState, plugName) {
+      if (!canvasState || !canvasState.plugPointerLookup) return null;
+      return canvasState.plugPointerLookup.get(String(plugName || "").trim()) || null;
+    }
+    // 中文註解：把轉換後 Site 底圖重畫回 canvas；輸入為目前 canvas 狀態，輸出為清除所有箭頭後的乾淨底圖。
+    function redrawConvertedSiteBaseImage(canvasState) {
+      if (!canvasState || !canvasState.canvas || !canvasState.context || !canvasState.image) return;
+      canvasState.context.clearRect(0, 0, canvasState.canvas.width, canvasState.canvas.height);
+      canvasState.context.drawImage(canvasState.image, 0, 0);
+    }
+
+    // 中文註解：停止轉換後 Site 圖箭頭動畫；輸入／輸出走 appState，避免切換資料後舊動畫持續重繪。
+    function stopConvertedSiteArrowAnimation() {
+      if (appState.convertedSiteArrowFrameId) {
+        cancelAnimationFrame(appState.convertedSiteArrowFrameId);
+        appState.convertedSiteArrowFrameId = 0;
+      }
+      appState.activeConvertedSitePinKey = "";
+    }
+
+    // 中文註解：清除轉換後 Site 圖上的箭頭；輸入／輸出走目前 canvas 狀態，會保留底圖但移除提示箭頭。
+    function clearConvertedSiteArrow() {
+      stopConvertedSiteArrowAnimation();
+      redrawConvertedSiteBaseImage(appState.convertedSiteCanvasState);
+    }
+
+    // 中文註解：繪製加粗提示箭頭；輸入為 pointer canvas 座標與閃爍透明度，輸出為藍白外框與黃綠本體交替閃爍的短箭頭。
+    function drawBlinkingPointerArrow(context, pointer, canvasWidth, canvasHeight, alpha) {
+      const pointerX = Math.max(0, Math.min(canvasWidth, pointer.x));
+      const pointerY = Math.max(0, Math.min(canvasHeight, pointer.y));
+      const arrowLength = Math.max(55, Math.min(105, canvasHeight * 0.18));
+      const isNearBottom = pointerY > canvasHeight - arrowLength - 28;
+      const startY = isNearBottom ? Math.max(0, pointerY - arrowLength) : Math.min(canvasHeight, pointerY + arrowLength);
+      const startPoint = { x: pointerX, y: startY };
+      const tipPoint = { x: pointerX, y: pointerY };
+      const angle = Math.atan2(tipPoint.y - startPoint.y, tipPoint.x - startPoint.x);
+      const headLength = 34;
+      const lineEndPoint = {
+        x: tipPoint.x - Math.cos(angle) * (headLength * .72),
+        y: tipPoint.y - Math.sin(angle) * (headLength * .72),
+      };
+      const blinkRatio = Math.max(0, Math.min(1, (alpha - .35) / .65));
+      const outlineColor = blinkRatio > .5 ? "#ffffff" : "#2563eb";
+      const fillColor = blinkRatio > .5 ? "#bef264" : "#facc15";
+
+      // 中文註解：先畫較粗的外框箭頭，提供藍白閃爍輪廓；線段終點退到箭頭頭部後方，避免凸出尖端。
+      // context.globalAlpha = alpha;
+      // context.strokeStyle = outlineColor;
+      // context.fillStyle = outlineColor;
+      // context.lineWidth = 18;
+      // context.lineCap = "butt";
+      // context.lineJoin = "round";
+      // context.shadowColor = "rgba(37, 99, 235, .55)";
+      // context.shadowBlur = 14;
+      // context.beginPath();
+      // context.moveTo(startPoint.x, startPoint.y);
+      // context.lineTo(lineEndPoint.x, lineEndPoint.y);
+      // context.stroke();
+      // context.beginPath();
+      // context.moveTo(tipPoint.x, tipPoint.y);
+      // context.lineTo(tipPoint.x - headLength * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      // context.lineTo(tipPoint.x - headLength * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * Math.sin(angle + Math.PI / 6));
+      // context.closePath();
+      // context.fill();
+      // context.restore();
+
+      // 中文註解：再畫較細的黃綠本體箭頭，讓提示主體在外框內閃爍但不遮住指向尖端。
+      context.save();
+      context.globalAlpha = alpha;
+      context.strokeStyle = fillColor;
+      context.fillStyle = fillColor;
+      context.lineWidth = 13;
+      context.lineCap = "butt";
+      context.lineJoin = "round";
+      context.shadowColor = "rgba(132, 204, 22, .45)";
+      context.shadowBlur = 8;
+      context.beginPath();
+      context.moveTo(startPoint.x, startPoint.y);
+      context.lineTo(lineEndPoint.x, lineEndPoint.y);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(tipPoint.x, tipPoint.y);
+      context.lineTo(tipPoint.x - headLength * Math.cos(angle - Math.PI / 6), tipPoint.y - headLength * Math.sin(angle - Math.PI / 6));
+      context.lineTo(tipPoint.x - headLength * Math.cos(angle + Math.PI / 6), tipPoint.y - headLength * Math.sin(angle + Math.PI / 6));
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+
+    // 中文註解：依右側 pin 按鈕點選結果啟動閃爍箭頭；輸入 plugName 與 pinKey，同一 pinKey 再點一次會清除箭頭。
+    function toggleConvertedSiteArrowForPlug(plugName, pinKey) {
+      const canvasState = appState.convertedSiteCanvasState;
+      if (!canvasState || !canvasState.annotationData || !canvasState.image) return;
+      if (appState.activeConvertedSitePinKey && appState.activeConvertedSitePinKey === pinKey) {
+        clearConvertedSiteArrow();
+        return;
+      }
+
+      stopConvertedSiteArrowAnimation();
+      const rawPointer = findConvertedSitePointerByPlugName(canvasState, plugName);
+      if (!rawPointer) {
+        redrawConvertedSiteBaseImage(canvasState);
+        return;
+      }
+
+      const pointer = scaleCalloutPoint(rawPointer, canvasState.scaleX, canvasState.scaleY);
+      appState.activeConvertedSitePinKey = pinKey;
+      const startedAt = performance.now();
+
+      function drawFrame(now) {
+        if (appState.activeConvertedSitePinKey !== pinKey) return;
+        redrawConvertedSiteBaseImage(canvasState);
+        const alpha = 0.35 + Math.abs(Math.sin((now - startedAt) / 220)) * 0.65;
+        drawBlinkingPointerArrow(canvasState.context, pointer, canvasState.canvas.width, canvasState.canvas.height, alpha);
+        appState.convertedSiteArrowFrameId = requestAnimationFrame(drawFrame);
+      }
+
+      appState.convertedSiteArrowFrameId = requestAnimationFrame(drawFrame);
+    }
+
+    // 中文註解：非同步載入轉換後 Site 圖與同名 JSON；輸入為 canvas 容器與路徑，輸出為只有底圖的 canvas 與暫存標註資料。
+    async function renderConvertedSiteCanvas(canvasWrap, imagePath, jsonPath, plugNames = []) {
+      stopConvertedSiteArrowAnimation();
+      appState.convertedSiteCanvasState = null;
+      if (!canvasWrap) return;
+      const canvas = canvasWrap.querySelector(".converted-site-canvas");
+      const status = canvasWrap.querySelector(".converted-canvas-status");
+      const renderKey = `${imagePath}|${jsonPath}`;
+      canvasWrap.dataset.convertedSiteKey = renderKey;
+      if (!canvas || !status) return;
+
+      function setConvertedStatus(message, isHidden) {
+        status.textContent = message;
+        status.classList.toggle("hidden", Boolean(isHidden));
+      }
+
+      const imageFile = appState.imageFileMap.get(String(imagePath || "").toLowerCase());
+      const jsonFile = findFolderFileByRelativePath(jsonPath);
+      if (!imageFile) {
+        setConvertedStatus(`找不到轉換後圖片：${imagePath || "FileID 空白"}`, false);
+        return;
+      }
+      if (!jsonFile) {
+        setConvertedStatus(`找不到轉換後標註 JSON：${jsonPath || "FileID 空白"}`, false);
+        return;
+      }
+
+      try {
+        setConvertedStatus("轉換後圖片載入中...", false);
+        const [image, annotationData] = await Promise.all([loadImageFile(imageFile), readJsonObjectFile(jsonFile)]);
+        if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
+        const sourceWidth = Number(annotationData && annotationData.width ? annotationData.width : image.naturalWidth) || image.naturalWidth;
+        const sourceHeight = Number(annotationData && annotationData.height ? annotationData.height : image.naturalHeight) || image.naturalHeight;
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        appState.convertedSiteCanvasState = {
+          canvas,
+          context: canvas.getContext("2d"),
+          image,
+          annotationData,
+          plugPointerLookup: buildConvertedSitePointerLookup(annotationData, plugNames),
+          scaleX: image.naturalWidth / sourceWidth,
+          scaleY: image.naturalHeight / sourceHeight,
+        };
+        redrawConvertedSiteBaseImage(appState.convertedSiteCanvasState);
+        setConvertedStatus("", true);
+      } catch (error) {
+        if (canvasWrap.dataset.convertedSiteKey !== renderKey) return;
+        setConvertedStatus(`轉換後圖片繪製失敗：${error.message}`, false);
+      }
+    }
+    // 中文註解：解析 Document XML 並檢查 parsererror；輸入是 XML 文字，輸出是 DOM Document。
+    function parseDocumentXml(xmlText) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+      const parseError = xmlDoc.querySelector("parsererror");
+      if (parseError) throw new Error(`XML 解析錯誤：${parseError.textContent.trim()}`);
+      return xmlDoc;
+    }
+
+    // 中文註解：正規化 XML GRAPHIC 的 SRC/LINKID；輸入可能含副檔名，輸出是對應 JSON 使用的不含副檔名 key。
+    function normalizeGraphicKey(value) {
+      return String(value || "").trim().replace(/\.[^.]+$/, "");
+    }
+
+    // 中文註解：依 xml_document_use 對應資料找出 Picture/XmlUse 圖檔；輸入為 GRAPHIC SRC/LINKID，輸出為圖片 File 與對應檔名。
+    function findXmlUseImageFile(graphicSource, graphicLinkId) {
+      const candidateKeys = [normalizeGraphicKey(graphicSource), normalizeGraphicKey(graphicLinkId)].filter(Boolean);
+      for (const graphicKey of candidateKeys) {
+        const mappedFileId = appState.xmlDocumentUseData[graphicKey];
+        if (!mappedFileId) continue;
+        const mappedFileName = String(mappedFileId).toLowerCase().endsWith(".png") ? String(mappedFileId) : `${mappedFileId}.png`;
+        const imageFile = appState.xmlUseImageFileMap.get(mappedFileName.toLowerCase());
+        if (imageFile) return { file: imageFile, fileName: mappedFileName, graphicKey };
+        return { file: null, fileName: mappedFileName, graphicKey };
+      }
+      return { file: null, fileName: "", graphicKey: candidateKeys[0] || "" };
+    }
+
+    // 中文註解：建立 XML 文件圖片 DOM；找到 Picture/XmlUse 圖檔時顯示圖片，否則顯示可診斷的 placeholder。
+    function renderXmlUseGraphic(graphicNode) {
+      const graphicSource = graphicNode.getAttribute("SRC") || "";
+      const graphicLinkId = graphicNode.getAttribute("LINKID") || "";
+      const imageMatch = findXmlUseImageFile(graphicSource, graphicLinkId);
+      if (!imageMatch.file) {
+        const missingText = imageMatch.fileName
+          ? `[圖片] 找不到 Picture/XmlUse/${imageMatch.fileName}（來源：${graphicSource || graphicLinkId || "未知圖片"}）`
+          : `[圖片] 找不到 xml_document_use 對應：${graphicSource || graphicLinkId || "未知圖片"}`;
+        return createDocumentEmptyMessage(missingText);
+      }
+
+      const imageUrl = createFileObjectUrl(imageMatch.file);
+      appState.documentImageUrls.push(imageUrl);
+      const wrapper = document.createElement("figure");
+      wrapper.className = "xml-use-image-wrap";
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = graphicSource || imageMatch.fileName;
+      wrapper.appendChild(image);
+      return wrapper;
+    }
+
+    // 中文註解：釋放文件 dialog 內 XML 圖片建立的暫存網址，避免多次開啟文件後佔用記憶體。
+    function revokeDocumentImageUrls() {
+      appState.documentImageUrls.forEach(revokeBlobUrl);
+      appState.documentImageUrls = [];
+    }
+
+    // 中文註解：從索引按鈕資料組出文件標題；輸入是索引節點資料，輸出為 dialog 標題文字。
+    function describeIndexRecord(record) {
+      return `${record.documentType || "未知類型"} / ${record.parentName || "未知群組"} / ${record.nameCn || "未命名文件"}`;
+    }
+
+    // 中文註解：在目前頁面開啟文件預覽 dialog；輸入是索引節點資料，輸出為左右並排的原始檔與轉換後內容。
+    function openIndexDocumentWindow(record) {
+      revokeDocumentImageUrls();
+      const titleText = describeIndexRecord(record);
+      summaryElement.classList.remove("error");
+      const panels = renderDocumentCompareDialog(titleText);
+      if (!documentDialog.open) documentDialog.showModal();
+
+      loadDocumentXmlFromFolder(record, "original")
+        .then((xmlDoc) => renderOriginalDocumentPanelContent(panels.originalContent, xmlDoc))
+        .catch((error) => renderDocumentPanelError(panels.originalContent, error, titleText));
+
+      loadDocumentXmlFromFolder(record, "converted")
+        .then((xmlDoc) => renderDocumentPanelContent(panels.convertedContent, xmlDoc))
+        .catch((error) => renderDocumentPanelError(panels.convertedContent, error, titleText));
+    }
+
+    // 中文註解：從目前已選資料夾讀取指定版本 XML；輸入是索引節點資料與版本，輸出是解析完成的 XML Document。
+    async function loadDocumentXmlFromFolder(record, documentKind) {
+      const relativePath = getDocumentRelativePath(record.factFileName, documentKind);
+      const xmlFile = findDocumentXmlFile(record.factFileName, documentKind);
+      if (!xmlFile) {
+        throw new Error(relativePath ? `找不到 ${relativePath}` : "FactFileName 空白，無法定位文件");
+      }
+
+      const xmlText = await readTextFile(xmlFile);
+      return parseDocumentXml(xmlText);
+    }
+
+    // 中文註解：更新文件預覽 dialog 的標題與狀態文字；輸入是標題與提示，輸出為目前頁面內的載入或錯誤畫面。
+    function showDocumentDialogState(titleText, subtitleText) {
+      documentDialogTitle.textContent = titleText;
+      documentDialogBody.innerHTML = `<p class="document-page-subtitle">${escapeHtml(subtitleText)}</p>`;
+    }
+
+    // 中文註解：建立左右比較 dialog；輸入是文件標題，輸出為左右欄內容容器，供非同步載入結果填入。
+    function renderDocumentCompareDialog(titleText) {
+      documentDialogTitle.textContent = titleText;
+      documentDialogBody.innerHTML = "";
+
+      const layout = document.createElement("div");
+      layout.className = "document-compare-layout";
+      const originalContent = createDocumentComparePanel(layout, "原始檔", "正在載入 Document XML...", "original-document-panel");
+      const convertedContent = createDocumentComparePanel(layout, "轉換後", "正在載入 Output/Document XML...");
+      documentDialogBody.appendChild(layout);
+      return { originalContent, convertedContent };
+    }
+
+    // 中文註解：建立單側文件面板；輸入為父層、標題與載入提示，輸出為可填入 XML 渲染結果的內容區。
+    function createDocumentComparePanel(parentElement, headingText, loadingText, extraPanelClass) {
+      const panel = document.createElement("section");
+      panel.className = extraPanelClass ? `document-compare-panel ${extraPanelClass}` : "document-compare-panel";
+
+      const heading = document.createElement("h2");
+      heading.className = "document-compare-heading";
+      heading.textContent = headingText;
+      panel.appendChild(heading);
+
+      const content = document.createElement("div");
+      content.className = "document-compare-content";
+      content.innerHTML = `<p class="document-page-subtitle">${escapeHtml(loadingText)}</p>`;
+      panel.appendChild(content);
+      parentElement.appendChild(panel);
+      return content;
+    }
+
+    // 中文註解：把 XML 轉成 viewer-style HTML 放入指定欄位；輸入是欄位 DOM 與 XML Document，輸出為畫面中的文件內容。
+    // 中文註解：把原始 Document XML 轉成左欄專用排版；輸入是欄位 DOM 與 XML Document，輸出為接近原廠文件的白底圖文版面。
+    function renderOriginalDocumentPanelContent(contentElement, xmlDoc) {
+      contentElement.innerHTML = "";
+      contentElement.appendChild(buildOriginalDocumentHtmlView(xmlDoc));
+    }
+
+    // 中文註解：建立原始檔專用 HTML；輸入 XML Document，依文件根格式分流到功能描述或維修手冊版型，其他格式回退既有 viewer-style。
+    function buildOriginalDocumentHtmlView(xmlDoc) {
+      const root = xmlDoc && xmlDoc.documentElement;
+      const functionalDescription = findFirstElementByLocalTag(root, "FUNCTIONALDESCRIPTION");
+      if (functionalDescription) return buildOriginalFunctionalDescriptionView(functionalDescription);
+
+      const repairDocument = findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT") || findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT_MOD");
+      if (!repairDocument) return buildDocumentHtmlView(xmlDoc);
+      const processNodes = collectOriginalRepairProcesses(repairDocument);
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "original-document-view";
+      renderOriginalRepairDocument(repairDocument, processNodes, wrapper);
+      return wrapper;
+    }
+
+    // 中文註解：建立功能描述文件的左欄專用版型；輸入 FUNCTIONALDESCRIPTION，輸出標題、段落、圖片與索引表的白底文件排版。
+    function buildOriginalFunctionalDescriptionView(functionalDescription) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "original-functional-view";
+      renderOriginalFunctionalDescription(functionalDescription, wrapper);
+      return wrapper;
+    }
+
+    // 中文註解：依原始 XML 順序渲染功能描述；輸入 FUNCTIONALDESCRIPTION 與容器，輸出接近範例圖的章節內容。
+    function renderOriginalFunctionalDescription(functionalDescription, container) {
+      const documentTitle = getFirstChildText(functionalDescription, "DOCUMENTTITLE") || getFirstDescendantTextByLocalTag(functionalDescription, "HEADING") || "功能描述";
+      const titleElement = document.createElement("h1");
+      titleElement.className = "original-functional-title";
+      titleElement.textContent = documentTitle;
+      container.appendChild(titleElement);
+
+      functionalDescription.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "DOCUMENTTITLE" || tag === "HEADING") return;
+        renderOriginalFunctionalNode(child, container, { documentTitle });
+      });
+    }
+
+    // 中文註解：渲染功能描述各層節點；輸入 XML 節點、容器與目前標題，輸出段落、章節標題、圖片與表格。
+    function renderOriginalFunctionalNode(node, container, context) {
+      if (node.nodeType === Node.TEXT_NODE) return;
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      switch (tag) {
+        case "FUNCDESCINTRODUCTORY":
+        case "SUBSECTION2":
+        case "CHAPTER":
+          node.childNodes.forEach((child) => renderOriginalFunctionalNode(child, container, context));
+          break;
+        case "HEADING":
+          renderOriginalFunctionalHeading(node, container, context);
+          break;
+        case "PARAGRAPH":
+          renderOriginalFunctionalParagraph(node, container);
+          break;
+        case "GRAPHIC":
+          renderOriginalFunctionalGraphic(node, container);
+          break;
+        case "TABLE":
+          renderDocumentTable(node, container);
+          break;
+        default:
+          node.childNodes.forEach((child) => renderOriginalFunctionalNode(child, container, context));
+          break;
+      }
+    }
+
+    // 中文註解：渲染功能描述章節標題；輸入 HEADING，輸出 h2，並跳過與文件標題相同的重複標題。
+    function renderOriginalFunctionalHeading(headingNode, container, context) {
+      const headingText = headingNode.textContent.trim();
+      if (!headingText || headingText === (context && context.documentTitle)) return;
+      const headingElement = document.createElement("h2");
+      headingElement.className = "original-functional-section-title";
+      headingElement.textContent = headingText;
+      container.appendChild(headingElement);
+    }
+
+    // 中文註解：渲染功能描述段落；輸入 PARAGRAPH，輸出保留強調文字與圖片編號的 p，空白段落只當作視覺間距略過。
+    function renderOriginalFunctionalParagraph(paragraphNode, container) {
+      if (!paragraphNode.textContent.replace(/\s+/g, "").trim()) return;
+      const paragraph = document.createElement("p");
+      renderOriginalInlineChildren(paragraphNode, paragraph);
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：渲染功能描述圖片；輸入 GRAPHIC，輸出單欄大圖 figure，圖片來源沿用既有 XmlUse 對應邏輯。
+    function renderOriginalFunctionalGraphic(graphicNode, container) {
+      const figure = document.createElement("figure");
+      figure.className = "original-functional-figure";
+      figure.appendChild(renderXmlUseGraphic(graphicNode));
+      container.appendChild(figure);
+    }
+
+    // 中文註解：深度取得第一個指定 local tag 的文字；輸入根節點與 tag，輸出 trim 後文字，供功能描述缺標題時備援。
+    function getFirstDescendantTextByLocalTag(node, targetTagName) {
+      const found = findFirstElementByLocalTag(node, targetTagName);
+      return found ? found.textContent.trim() : "";
+    }
+
+    // 中文註解：渲染原始維修文件外框；輸入維修文件節點與流程清單，只輸出 XML 實際提供的標題、提示與流程內容。
+    function renderOriginalRepairDocument(repairDocument, processNodes, container) {
+      const titleText = getFirstChildText(repairDocument, "TITLE") || "維修流程";
+      const awNumberText = formatOriginalAwNumber(repairDocument.getAttribute("AWNUMBER") || "");
+      const titleElement = document.createElement("h1");
+      titleElement.className = "original-document-title";
+      titleElement.textContent = awNumberText ? `${awNumberText} | ${titleText}` : titleText;
+      container.appendChild(titleElement);
+
+      renderOriginalRepairMoreInfo(repairDocument, container);
+      renderOriginalRepairHints(repairDocument, container);
+      renderOriginalRepairDocumentFallbackChildren(repairDocument, container);
+
+      processNodes.forEach((processNode, processIndex) => renderOriginalRepairProcess(processNode, container, processIndex + 1));
+    }
+
+    // 中文註解：補上維修文件根層尚未被專用版型處理的內容；輸入 REPAIRMANUALDOCUMENT，輸出 INCLUDE_*、表格或其他文字節點。
+    function renderOriginalRepairDocumentFallbackChildren(repairDocument, container) {
+      const handledTags = new Set(["TITLE", "DOCUMENTLIST", "HINTS", "PREPROCESSES", "KEYPROCESS", "POSTPROCESSES"]);
+      repairDocument.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+
+    // 中文註解：渲染維修文件上方的更多資訊提示；輸入維修文件節點，若有直接 DOCUMENTLIST 就輸出藍色底線提示。
+    function renderOriginalRepairMoreInfo(repairDocument, container) {
+      const documentList = getFirstChildElement(repairDocument, "DOCUMENTLIST");
+      const hotspots = documentList ? findDescendantElementsByLocalTags(documentList, ["HOTSPOT"]) : [];
+      if (hotspots.length === 0) return;
+
+      container.appendChild(renderOriginalDocumentList(documentList));
+    }
+
+    // 中文註解：渲染維修文件 HINTS 上方資訊；輸入維修文件節點，輸出警告與有損壞危險區塊。
+    function renderOriginalRepairHints(repairDocument, container) {
+      const hintsNode = getLocalTagName(repairDocument) === "HINTS" ? repairDocument : getFirstChildElement(repairDocument, "HINTS");
+      if (!hintsNode) return;
+
+      const hintEntries = collectOriginalRepairHintEntries(hintsNode);
+      if (hintEntries.length === 0) return;
+      const hintsWrap = document.createElement("div");
+      hintsWrap.className = "original-repair-hints";
+      hintEntries.forEach((hintNode) => renderOriginalRepairHintBox(hintNode, hintsWrap));
+      container.appendChild(hintsWrap);
+    }
+
+    // 中文註解：收集 HINTS 裡可顯示的提示節點；輸入 HINTS，輸出 WARNING/DAMAGE/HINT/TECH_INFO，避免 INCLUDE_* 包住的內容被漏掉。
+    function collectOriginalRepairHintEntries(hintsNode) {
+      const hintEntries = [];
+      collectOriginalHintEntryNodes(hintsNode, hintEntries);
+      const hintOrder = { WARNING: 0, DAMAGE: 1, HINT: 2, TECH_INFO: 3 };
+      return hintEntries.sort((left, right) => (hintOrder[getLocalTagName(left)] ?? 9) - (hintOrder[getLocalTagName(right)] ?? 9));
+    }
+
+    // 中文註解：遞迴收集提示節點；輸入任意 HINTS/INCLUDE_* 容器，輸出真正可讀的提示內容節點。
+    function collectOriginalHintEntryNodes(parentNode, hintEntries) {
+      if (!parentNode) return;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "WARNING" || tag === "DAMAGE" || tag === "HINT" || tag === "TECH_INFO") {
+          hintEntries.push(child);
+          return;
+        }
+        if (tag.startsWith("INCLUDE_") || tag === "HINTS") collectOriginalHintEntryNodes(child, hintEntries);
+      });
+    }
+
+    // 中文註解：渲染單一警示卡片；輸入 WARNING/DAMAGE/HINT，輸出含標題列、重點文字、條列與文件連結的區塊。
+    function renderOriginalRepairHintBox(hintNode, container) {
+      const hintTag = getLocalTagName(hintNode);
+      const box = document.createElement("section");
+      box.className = `original-hint-box ${hintTag === "WARNING" ? "warning" : hintTag === "TECH_INFO" ? "info" : "damage"}`;
+
+      const header = document.createElement("div");
+      header.className = "original-hint-header";
+      const icon = document.createElement("span");
+      icon.className = "original-hint-icon";
+      icon.textContent = hintTag === "WARNING" ? "!" : "i";
+      const signal = document.createElement("span");
+      signal.textContent = getFirstChildText(hintNode, "SIGNALWORD") || (hintTag === "WARNING" ? "警告" : hintTag === "TECH_INFO" ? "技術性附加資訊" : "有损坏危险");
+      header.appendChild(icon);
+      header.appendChild(signal);
+      box.appendChild(header);
+
+      const body = document.createElement("div");
+      body.className = "original-hint-body";
+      appendOriginalHintParagraph(hintNode, body, "TYPE_OF_DANGER", "original-hint-main");
+      appendOriginalHintParagraph(hintNode, body, "CONSEQUENCES", "original-hint-detail");
+      appendOriginalHintInformations(hintNode, body);
+      appendOriginalHintProtections(hintNode, body);
+      appendOriginalHintDocumentLinks(hintNode, body);
+      appendOriginalHintFallbackChildren(hintNode, body);
+      box.appendChild(body);
+      container.appendChild(box);
+    }
+
+    // 中文註解：渲染提示中的主旨段落；輸入提示節點與子節點名稱，輸出加粗段落。
+    function appendOriginalHintParagraph(hintNode, container, childTagName, className) {
+      const childNode = getFirstChildElement(hintNode, childTagName);
+      const text = getOriginalHintTextWithoutDocumentList(childNode);
+      if (!text) return;
+      const paragraph = document.createElement("p");
+      paragraph.className = className;
+      paragraph.textContent = text;
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：渲染提示中的防護事項；輸入提示節點，輸出條列清單，避免 DOCUMENTLIST 文字混入條列。
+    // 中文註解：渲染提示中的 INFORMATION；輸入提示節點，輸出每個資訊段落，補足 TECH_INFO 等非警告類內容。
+    function appendOriginalHintInformations(hintNode, container) {
+      findDirectChildElementsByLocalTag(hintNode, "INFORMATION").forEach((informationNode) => {
+        renderOriginalGenericNode(informationNode, container, { skipTags: ["DOCUMENTLIST"] });
+      });
+    }
+    function appendOriginalHintProtections(hintNode, container) {
+      const protectionNodes = findDirectChildElementsByLocalTag(hintNode, "PROTECTION");
+      const protectionTexts = protectionNodes.map((node) => getOriginalHintTextWithoutDocumentList(node)).filter(Boolean);
+      if (protectionTexts.length === 0) return;
+      const list = document.createElement("ul");
+      list.className = "original-hint-list";
+      protectionTexts.forEach((text) => {
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+    }
+
+    // 中文註解：渲染提示中的文件連結；輸入提示節點，輸出 AWNUMBER + TITLE 的藍色底線文字。
+    // 中文註解：渲染提示中尚未被專用分支處理的子節點；輸入提示節點，輸出可讀文字、圖片或文件連結的 fallback。
+    function appendOriginalHintFallbackChildren(hintNode, container) {
+      const handledTags = new Set(["GRAPHIC", "SIGNALWORD", "TYPE_OF_DANGER", "CONSEQUENCES", "PROTECTION", "INFORMATION", "DOCUMENTLIST"]);
+      hintNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+    function appendOriginalHintDocumentLinks(hintNode, container) {
+      const documentLists = findDescendantElementsByLocalTags(hintNode, ["DOCUMENTLIST"]);
+      const hotspots = [];
+      documentLists.forEach((documentList) => {
+        findDescendantElementsByLocalTags(documentList, ["HOTSPOT"]).forEach((hotspot) => hotspots.push(hotspot));
+      });
+      if (hotspots.length === 0) return;
+
+      const linksWrap = document.createElement("div");
+      linksWrap.className = "original-hint-links";
+      hotspots.forEach((hotspot) => {
+        const link = document.createElement("a");
+        link.href = "javascript:void(0)";
+        const awNumber = getFirstChildText(hotspot, "AWNUMBER");
+        const title = getFirstChildText(hotspot, "TITLE");
+        link.textContent = [awNumber, title].filter(Boolean).join("　");
+        linksWrap.appendChild(link);
+      });
+      container.appendChild(linksWrap);
+    }
+
+    // 中文註解：取出提示文字但排除 DOCUMENTLIST；輸入提示子節點，輸出不含文件連結標題的純文字。
+    function getOriginalHintTextWithoutDocumentList(node) {
+      if (!node) return "";
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\s+/g, " ").trim();
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+      if (getLocalTagName(node) === "DOCUMENTLIST" || getLocalTagName(node) === "GRAPHIC") return "";
+      return Array.from(node.childNodes).map((child) => getOriginalHintTextWithoutDocumentList(child)).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    }
+    // 中文註解：通用渲染未知 XML 節點；輸入任意原始 XML 節點，輸出可讀文字、圖片、表格或文件連結，避免左側漏內容。
+    function renderOriginalGenericNode(node, container, options) {
+      if (!node) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.replace(/\s+/g, " ").trim();
+        if (text) appendOriginalGenericParagraph(container, text);
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      const skipTags = new Set((options && options.skipTags) || []);
+      if (skipTags.has(tag)) return;
+      switch (tag) {
+        case "GRAPHIC":
+          container.appendChild(renderXmlUseGraphic(node));
+          return;
+        case "TABLE":
+          renderDocumentTable(node, container);
+          return;
+        case "DOCUMENTLIST":
+          container.appendChild(renderOriginalDocumentList(node));
+          return;
+        case "HOTSPOT":
+          container.appendChild(renderOriginalDocumentLink(node));
+          return;
+        case "HINTS":
+          renderOriginalRepairHints(node, container);
+          return;
+        case "WARNING":
+        case "DAMAGE":
+        case "HINT":
+        case "TECH_INFO":
+          renderOriginalRepairHintBox(node, container);
+          return;
+        case "PARAGRAPH":
+        case "SIMPLE_TEXTFRAGMENT":
+        case "TEXTFRAGMENT":
+        case "LISTENTRY":
+        case "LISTELEMENT":
+        case "CONNECTION":
+        case "DIMENSION":
+        case "DESCRIPTION":
+        case "PROPERTY":
+        case "VALUE":
+        case "UNIT":
+        case "PART":
+        case "UPI":
+          appendOriginalGenericInlineNode(node, container);
+          return;
+        case "LIST":
+        case "GENERALLIST":
+          container.appendChild(renderOriginalGenericList(node));
+          return;
+        case "TITLE":
+        case "SIGNALWORD":
+          appendOriginalGenericTitle(container, node.textContent.trim());
+          return;
+        default:
+          renderOriginalGenericChildren(node, container, options);
+          return;
+      }
+    }
+
+    // 中文註解：渲染未知節點的子節點；輸入容器節點與輸出容器，會依 XML 順序遞迴顯示可讀內容。
+    function renderOriginalGenericChildren(parentNode, container, options) {
+      parentNode.childNodes.forEach((child) => renderOriginalGenericNode(child, container, options));
+    }
+
+    // 中文註解：把 inline 型 XML 節點轉成段落；輸入文字片段節點，輸出保留強調與圖片編號的 p。
+    function appendOriginalGenericInlineNode(node, container) {
+      if (!node.textContent.replace(/\s+/g, "").trim()) return;
+      const paragraph = document.createElement("p");
+      renderOriginalInlineChildren(node, paragraph);
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：加入通用段落；輸入容器與純文字，輸出單一 p，避免文字節點散落在畫面上。
+    function appendOriginalGenericParagraph(container, text) {
+      if (!text) return;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：加入通用小標；輸入容器與標題文字，輸出簡單粗體標題。
+    function appendOriginalGenericTitle(container, text) {
+      if (!text) return;
+      const title = document.createElement("div");
+      title.className = "original-generic-title";
+      title.textContent = text;
+      container.appendChild(title);
+    }
+
+    // 中文註解：渲染原始文件連結清單；輸入 DOCUMENTLIST，輸出每個 HOTSPOT 的 block 連結。
+    function renderOriginalDocumentList(documentListNode) {
+      const links = document.createElement("div");
+      links.className = "original-document-links";
+      const hotspots = findDescendantElementsByLocalTags(documentListNode, ["HOTSPOT"]);
+      hotspots.forEach((hotspot) => links.appendChild(renderOriginalDocumentLink(hotspot)));
+      if (links.children.length === 0 && documentListNode.textContent.trim()) appendOriginalGenericParagraph(links, documentListNode.textContent.trim());
+      return links;
+    }
+
+    // 中文註解：渲染單一原始文件連結；輸入 HOTSPOT，輸出 div，避免文件清單擠成同一行。
+    function renderOriginalDocumentLink(hotspotNode) {
+      const link = document.createElement("div");
+      link.className = "original-document-link";
+      const awNumber = getFirstChildText(hotspotNode, "AWNUMBER");
+      const title = getFirstChildText(hotspotNode, "TITLE");
+      link.textContent = [awNumber, title].filter(Boolean).join(" ") || hotspotNode.textContent.trim();
+      const linkId = hotspotNode.getAttribute("LINKID") || "";
+      if (linkId) link.setAttribute("title", `HOTSPOT: ${linkId}`);
+      return link;
+    }
+
+    // 中文註解：渲染通用清單；輸入 LIST/GENERALLIST，輸出 ul，未知清單內容也會保留下來。
+    function renderOriginalGenericList(listNode) {
+      const list = document.createElement("ul");
+      list.className = "original-hint-list";
+      listNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const item = document.createElement("li");
+        renderOriginalGenericNode(child, item);
+        if (!item.textContent.trim()) item.textContent = child.textContent.replace(/\s+/g, " ").trim();
+        if (item.textContent.trim()) list.appendChild(item);
+      });
+      return list;
+    }
+    // 中文註解：將 AWNUMBER 轉成畫面標題用的分段格式；輸入例如 3540001，輸出 35 40 001。
+    function formatOriginalAwNumber(awNumber) {
+      const cleanValue = String(awNumber || "").trim();
+      if (/^\d{7}$/.test(cleanValue)) return `${cleanValue.slice(0, 2)} ${cleanValue.slice(2, 4)} ${cleanValue.slice(4)}`;
+      return cleanValue;
+    }
+
+    // 中文註解：收集原始維修文件的完整流程；輸入 REPAIRMANUALDOCUMENT，依序輸出前置、核心、後置 PROCESS，避免漏掉 PREPROCESSES。
+    function collectOriginalRepairProcesses(repairDocument) {
+      const processNodes = [];
+      ["PREPROCESSES", "KEYPROCESS", "POSTPROCESSES"].forEach((sectionTagName) => {
+        const sectionNode = getFirstChildElement(repairDocument, sectionTagName);
+        if (!sectionNode) return;
+        collectOriginalProcessNodes(sectionNode, processNodes);
+      });
+      return processNodes;
+    }
+
+    // 中文註解：遞迴收集流程節點；輸入流程容器與輸出陣列，會穿透 INCLUDE_PROCESS 但保留每個 PROCESS 自成章節。
+    function collectOriginalProcessNodes(parentNode, processNodes) {
+      if (!parentNode) return;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "PROCESS") {
+          processNodes.push(child);
+          collectOriginalProcessNodes(child, processNodes);
+          return;
+        }
+        if (tag === "INCLUDE_PROCESS" || tag === "PREPROCESSES" || tag === "KEYPROCESS" || tag === "POSTPROCESSES" || tag === "STEPS") {
+          collectOriginalProcessNodes(child, processNodes);
+        }
+      });
+    }
+
+    // 中文註解：渲染單一維修流程；輸入 PROCESS 與流程序號，輸出流程標題、流程提示與每個操作步驟的圖文列。
+    function renderOriginalRepairProcess(processNode, container, processIndex) {
+      const processSection = document.createElement("section");
+      processSection.className = "original-process";
+
+      const processTitle = document.createElement("h3");
+      processTitle.className = "original-process-title";
+      processTitle.textContent = `${processIndex}-${getFirstChildText(processNode, "TITLE") || "未命名流程"}`;
+      processSection.appendChild(processTitle);
+      renderOriginalRepairHints(processNode, processSection);
+
+      const stepsNode = getFirstChildElement(processNode, "STEPS");
+      const stepNodes = stepsNode ? collectOriginalStepNodes(stepsNode) : [];
+      stepNodes.forEach((stepNode) => renderOriginalRepairStep(stepNode, processSection));
+      renderOriginalProcessFallbackChildren(processNode, processSection);
+      container.appendChild(processSection);
+    }
+
+    // 中文註解：補上流程層未被專用版型處理的內容；輸入 PROCESS，輸出 PARTS/DOCUMENTLIST/ADDITIONALDATA 等可讀節點。
+    function renderOriginalProcessFallbackChildren(processNode, container) {
+      const handledTags = new Set(["TITLE", "HINTS", "STEPS"]);
+      processNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+
+    // 中文註解：收集流程中的操作步驟；輸入 STEPS，輸出 OPERATINGSTEP，會深入 CHECKSTEP 但跳過巢狀 INCLUDE_PROCESS 以免重複顯示。
+    function collectOriginalStepNodes(parentNode) {
+      const stepNodes = [];
+      if (!parentNode) return stepNodes;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "OPERATINGSTEP") {
+          stepNodes.push(child);
+          return;
+        }
+        if (tag === "INCLUDE_PROCESS" || tag === "PROCESS") return;
+        collectOriginalStepNodes(child).forEach((stepNode) => stepNodes.push(stepNode));
+      });
+      return stepNodes;
+    }
+
+    // 中文註解：渲染原始檔的單一步驟；輸入 OPERATINGSTEP，輸出左側圖片、右側條列說明的同列版面。
+    function renderOriginalRepairStep(stepNode, container) {
+      const row = document.createElement("div");
+      row.className = "original-step-row";
+      const graphicNodes = findDirectChildElementsByLocalTag(stepNode, "GRAPHIC");
+      if (graphicNodes.length === 0) row.classList.add("original-step-row-no-graphic");
+
+      if (graphicNodes.length > 0) {
+        const graphicsColumn = document.createElement("div");
+        graphicsColumn.className = "original-step-graphics";
+        graphicNodes.forEach((graphicNode) => graphicsColumn.appendChild(renderXmlUseGraphic(graphicNode)));
+        row.appendChild(graphicsColumn);
+      }
+
+      const textColumn = document.createElement("div");
+      textColumn.className = "original-step-text";
+      const instructionNodes = findDirectChildElementsByLocalTag(stepNode, "INSTRUCTION");
+      const list = document.createElement("ul");
+      instructionNodes.forEach((instructionNode) => appendOriginalInstructionItems(instructionNode, list));
+      appendOriginalStepFallbackItems(stepNode, list);
+      if (list.children.length === 0 && stepNode.textContent.trim()) {
+        const item = document.createElement("li");
+        item.textContent = stepNode.textContent.replace(/\s+/g, " ").trim();
+        list.appendChild(item);
+      }
+      textColumn.appendChild(list);
+      row.appendChild(textColumn);
+      container.appendChild(row);
+    }
+
+    // 中文註解：補上步驟中非圖片、非 INSTRUCTION 的直接內容；輸入 OPERATINGSTEP，輸出額外資料、提示或文件連結條列。
+    function appendOriginalStepFallbackItems(stepNode, listElement) {
+      const handledTags = new Set(["GRAPHIC", "INSTRUCTION"]);
+      stepNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        appendOriginalInstructionChildItem(child, listElement);
+      });
+    }
+
+    // 中文註解：把 INSTRUCTION 內所有可讀內容轉成條列；輸入 instruction 節點，輸出段落、提示、文件連結與其他 fallback 內容。
+    function appendOriginalInstructionItems(instructionNode, listElement) {
+      instructionNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          appendOriginalInstructionChildItem(child, listElement);
+          return;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "TEXTFRAGMENT") {
+          child.childNodes.forEach((fragmentChild) => appendOriginalInstructionChildItem(fragmentChild, listElement));
+          return;
+        }
+        appendOriginalInstructionChildItem(child, listElement);
+      });
+    }
+
+    // 中文註解：渲染單一 INSTRUCTION 子節點；輸入任意子節點，輸出一個 li，避免未知標籤被忽略。
+    function appendOriginalInstructionChildItem(childNode, listElement) {
+      if (childNode.nodeType === Node.TEXT_NODE) {
+        const text = childNode.textContent.replace(/\s+/g, " ").trim();
+        if (!text) return;
+        const item = document.createElement("li");
+        item.textContent = text;
+        listElement.appendChild(item);
+        return;
+      }
+      if (childNode.nodeType !== Node.ELEMENT_NODE) return;
+      const item = document.createElement("li");
+      renderOriginalGenericNode(childNode, item);
+      if (item.textContent.trim() || item.children.length > 0) listElement.appendChild(item);
+    }
+
+    // 中文註解：遞迴渲染原始檔段落內文；輸入 XML inline 節點，輸出文字、圖片編號與強調文字。
+    function renderOriginalInlineChildren(node, container) {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          container.appendChild(document.createTextNode(child.textContent.replace(/\s+/g, " ")));
+          return;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "IMAGENUMBER" || tag === "HOTSPOT") {
+          const span = document.createElement("span");
+          span.className = tag === "IMAGENUMBER" ? "original-image-number" : "hotspot";
+          span.textContent = child.textContent.trim();
+          container.appendChild(span);
+          return;
+        }
+        if (tag === "EMPHASIZE" || tag === "EMPHASIZE1" || tag === "EMPHASIZE2" || tag === "EMPHASIZE3") {
+          const strong = document.createElement("strong");
+          renderOriginalInlineChildren(child, strong);
+          container.appendChild(strong);
+          return;
+        }
+        renderOriginalInlineChildren(child, container);
+      });
+    }
+
+    // 中文註解：尋找直接子層指定 local tag；輸入父節點與 tag，輸出符合條件的 Element 陣列。
+    function findDirectChildElementsByLocalTag(parentNode, childTagName) {
+      const matches = [];
+      const target = String(childTagName || "").toUpperCase();
+      if (!parentNode) return matches;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === target) matches.push(child);
+      });
+      return matches;
+    }
+
+    // 中文註解：深度收集指定 local tags；輸入根節點與 tag 清單，輸出用於原始檔條列文字的節點陣列。
+    function findDescendantElementsByLocalTags(parentNode, tagNames) {
+      const matches = [];
+      const targets = new Set((tagNames || []).map((tagName) => String(tagName).toUpperCase()));
+      if (!parentNode) return matches;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        if (targets.has(getLocalTagName(child))) matches.push(child);
+        findDescendantElementsByLocalTags(child, tagNames).forEach((match) => matches.push(match));
+      });
+      return matches;
+    }
+    function renderDocumentPanelContent(contentElement, xmlDoc) {
+      contentElement.innerHTML = "";
+      contentElement.appendChild(buildDocumentHtmlView(xmlDoc));
+    }
+
+    // 中文註解：在單側欄位呈現載入錯誤；輸入為欄位 DOM 與錯誤，輸出為不影響另一側的錯誤提示。
+    function renderDocumentPanelError(contentElement, error, titleText) {
+      const message = error && error.message ? error.message : String(error || "未知錯誤");
+      contentElement.innerHTML = "";
+      contentElement.appendChild(createDocumentEmptyMessage(`無法載入文件：${message}`));
+      summaryElement.textContent = `無法載入文件 ${titleText}：${message}`;
+      summaryElement.classList.add("error");
+    }
+    // 中文註解：建立 HTML 顯示根節點；輸入是 XML Document，輸出是 viewer-style 的文件內容容器。
+    function buildDocumentHtmlView(xmlDoc) {
+      const inner = document.createElement("div");
+      inner.className = "html-view";
+      const root = xmlDoc && xmlDoc.documentElement;
+      if (!root) {
+        inner.appendChild(createDocumentEmptyMessage("沒有可呈現的 XML 內容。"));
+        return inner;
+      }
+
+      const functionalDescription = findFirstElementByLocalTag(root, "FUNCTIONALDESCRIPTION");
+      const repairDocument = findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT") || findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT_MOD");
+      if (functionalDescription) {
+        renderFunctionalDocument(functionalDescription, inner);
+        return inner;
+      }
+
+      if (repairDocument) {
+        renderRepairDocument(repairDocument, inner);
+        return inner;
+      }
+
+      inner.appendChild(createDocumentEmptyMessage("找不到可渲染的根元素。"));
+      return inner;
+    }
+
+    // 中文註解：渲染功能說明文件；輸入 FUNCTIONALDESCRIPTION，輸出含 viewer 風格標題與內文的 DOM。
+    function renderFunctionalDocument(functionalDescription, container) {
+      const titleElement = getFirstChildElement(functionalDescription, "DOCUMENTTITLE");
+      if (titleElement) {
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "doc-title";
+        titleDiv.textContent = titleElement.textContent.trim();
+        container.appendChild(titleDiv);
+      }
+
+      const innerDiv = document.createElement("div");
+      innerDiv.id = "inner-content";
+      container.appendChild(innerDiv);
+      functionalDescription.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const tag = getLocalTagName(child);
+          if (tag === "DOCUMENTTITLE" || tag === "HEADING") return;
+        }
+        renderDocumentNode(child, innerDiv);
+      });
+    }
+
+    // 中文註解：渲染維修文件；輸入 REPAIRMANUALDOCUMENT 節點，輸出含步驟、提示與中繼資訊的 DOM。
+    function renderRepairDocument(repairDocument, container) {
+      const titleText = getFirstChildText(repairDocument, "TITLE") || "維修流程";
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "doc-title";
+      titleDiv.textContent = titleText;
+      container.appendChild(titleDiv);
+
+      const innerDiv = document.createElement("div");
+      innerDiv.id = "inner-content";
+      innerDiv.className = "repair-doc";
+      container.appendChild(innerDiv);
+
+      const metaBits = [];
+      const awNumber = repairDocument.getAttribute("AWNUMBER");
+      const language = repairDocument.getAttribute("LANGUAGE");
+      if (awNumber) metaBits.push(`AWNUMBER ${awNumber}`);
+      if (language) metaBits.push(language);
+      if (metaBits.length) {
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "repair-meta";
+        const metaSpan = document.createElement("span");
+        metaSpan.textContent = metaBits.join(" · ");
+        metaDiv.appendChild(metaSpan);
+        innerDiv.appendChild(metaDiv);
+      }
+
+      repairDocument.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "TITLE") return;
+        renderRepairNode(child, innerDiv, { depth: 0 });
+      });
+    }
+
+    // 中文註解：遞迴轉換一般功能文件 XML 節點；使用 localName 判斷，支援 proc:GRAPHIC 等 namespace tag。
+    function renderDocumentNode(node, container) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.replace(/\s+/g, " ").trim();
+        if (text) container.appendChild(document.createTextNode(text));
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      switch (tag) {
+        case "FUNCTIONALDESCRIPTION":
+          renderDocumentChildren(node, container);
+          break;
+        case "DOCUMENTTITLE":
+          break;
+        case "FUNCDESCINTRODUCTORY":
+        case "CHAPTER":
+        case "SUBSECTION2": {
+          const section = document.createElement("section");
+          section.className = tag === "FUNCDESCINTRODUCTORY" ? "intro" : tag === "CHAPTER" ? "chapter" : "subsection";
+          renderDocumentChildren(node, section);
+          container.appendChild(section);
+          break;
+        }
+        case "HEADING":
+        case "TITLE": {
+          const heading = document.createElement("h2");
+          heading.textContent = node.textContent.trim();
+          container.appendChild(heading);
+          break;
+        }
+        case "PARAGRAPH": {
+          const paragraph = document.createElement("p");
+          renderDocumentChildren(node, paragraph);
+          container.appendChild(paragraph);
+          break;
+        }
+        case "EMPHASIZE":
+        case "EMPHASIZE1":
+        case "EMPHASIZE2":
+        case "EMPHASIZE3": {
+          const strong = document.createElement("strong");
+          renderDocumentChildren(node, strong);
+          container.appendChild(strong);
+          break;
+        }
+        case "LIST":
+        case "GENERALLIST":
+          container.appendChild(renderDocumentList(node));
+          break;
+        case "LISTENTRY":
+        case "LISTELEMENT":
+          container.appendChild(renderDocumentListItem(node));
+          break;
+        case "LABEL": {
+          const label = document.createElement("span");
+          label.className = "xml-list-label";
+          label.textContent = node.textContent.trim();
+          container.appendChild(label);
+          break;
+        }
+        case "GRAPHIC":
+          container.appendChild(renderXmlUseGraphic(node));
+          break;
+        case "HOTSPOT":
+          container.appendChild(renderHotspot(node));
+          break;
+        case "TABLE":
+          renderDocumentTable(node, container);
+          break;
+        default:
+          renderDocumentChildren(node, container);
+          break;
+      }
+    }
+
+    // 中文註解：遞迴轉換維修文件 XML 節點；輸入是節點、容器與步驟上下文，輸出為 viewer-style 維修內容。
+    function renderRepairNode(node, container, context) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent.trim()) container.appendChild(document.createTextNode(node.textContent));
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      const currentContext = context || { depth: 0 };
+      switch (tag) {
+        case "PROCESS":
+          renderRepairProcess(node, container, currentContext);
+          break;
+        case "INCLUDE_PROCESS":
+        case "PREPROCESSES":
+        case "HINTS":
+        case "STEPS":
+        case "INCLUDE_HINT":
+        case "INCLUDE_WARNING":
+        case "INCLUDE_DAMAGE":
+        case "INCLUDE_TECH_INFO":
+          renderDocumentChildren(node, container, renderRepairNode, currentContext);
+          break;
+        case "OPERATINGSTEP":
+          renderRepairStep(node, container, currentContext);
+          break;
+        case "INSTRUCTION": {
+          const instructionDiv = document.createElement("div");
+          instructionDiv.className = "repair-instruction";
+          renderDocumentChildren(node, instructionDiv, renderRepairNode, currentContext);
+          container.appendChild(instructionDiv);
+          break;
+        }
+        case "WARNING":
+        case "DAMAGE":
+        case "HINT":
+          renderRepairHint(node, container, currentContext);
+          break;
+        case "TECH_INFO":
+          renderRepairTechInfoBlock(node, container, currentContext);
+          break;
+        case "GRAPHIC":
+          container.appendChild(renderXmlUseGraphic(node));
+          break;
+        case "ILLUSTRATION": {
+          const figure = document.createElement("div");
+          figure.className = "repair-illustration";
+          renderDocumentChildren(node, figure, renderRepairNode, currentContext);
+          container.appendChild(figure);
+          break;
+        }
+        case "HOTSPOT":
+          container.appendChild(renderHotspot(node));
+          break;
+        case "DOCUMENTLIST":
+          container.appendChild(renderRepairDocumentList(node));
+          break;
+        case "TITLE":
+          if (node.textContent.trim()) {
+            const heading = document.createElement("h2");
+            heading.textContent = node.textContent.trim();
+            container.appendChild(heading);
+          }
+          break;
+        case "PARAGRAPH": {
+          const paragraph = document.createElement("p");
+          renderDocumentChildren(node, paragraph, renderRepairNode, currentContext);
+          container.appendChild(paragraph);
+          break;
+        }
+        case "TEXTFRAGMENT":
+        case "SIMPLE_TEXTFRAGMENT":
+          renderDocumentChildren(node, container, renderRepairNode, currentContext);
+          break;
+        case "TYPE_OF_DANGER":
+        case "CONSEQUENCES":
+        case "PROTECTION":
+        case "INFORMATION":
+          renderRepairHintContentBlock(node, container, currentContext);
+          break;
+        case "EMPHASIZE":
+        case "EMPHASIZE1":
+        case "EMPHASIZE2":
+        case "EMPHASIZE3": {
+          const strong = document.createElement("strong");
+          renderDocumentChildren(node, strong, renderRepairNode, currentContext);
+          container.appendChild(strong);
+          break;
+        }
+        case "LIST":
+        case "GENERALLIST":
+          container.appendChild(renderDocumentList(node));
+          break;
+        case "LISTENTRY":
+        case "LISTELEMENT":
+          container.appendChild(renderDocumentListItem(node));
+          break;
+        case "LABEL": {
+          const label = document.createElement("span");
+          label.className = "xml-list-label";
+          label.textContent = node.textContent.trim();
+          container.appendChild(label);
+          break;
+        }
+        case "TABLE":
+          renderDocumentTable(node, container);
+          break;
+        default:
+          renderDocumentChildren(node, container, renderRepairNode, currentContext);
+          break;
+      }
+    }
+
+    // 中文註解：渲染維修流程區塊；輸入 PROCESS，輸出含標題、步驟與提示群組的 section。
+    function renderRepairProcess(processNode, container, context) {
+      const processBlock = document.createElement("section");
+      processBlock.className = "repair-process";
+      if (context && context.depth > 0) processBlock.classList.add("repair-process-nested");
+
+      const titleElement = getFirstChildElement(processNode, "TITLE");
+      if (titleElement) {
+        const processTitle = document.createElement("h2");
+        processTitle.textContent = titleElement.textContent.trim();
+        processBlock.appendChild(processTitle);
+      }
+
+      const stepContext = { depth: context && context.depth ? context.depth + 1 : 1 };
+      let stepIndex = 0;
+      processNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "TITLE") return;
+        if (tag === "STEPS") {
+          const stepsWrap = document.createElement("div");
+          stepsWrap.className = "repair-steps";
+          renderRepairSteps(child, stepsWrap, stepContext, stepIndex);
+          processBlock.appendChild(stepsWrap);
+          stepIndex += getRepairStepCount(child);
+          return;
+        }
+        if (tag === "HINTS") {
+          const hintsWrap = document.createElement("div");
+          hintsWrap.className = "repair-hint-group";
+          renderDocumentChildren(child, hintsWrap, renderRepairNode, stepContext);
+          processBlock.appendChild(hintsWrap);
+          return;
+        }
+        renderRepairNode(child, processBlock, stepContext);
+      });
+
+      container.appendChild(processBlock);
+    }
+
+    // 中文註解：計算 STEPS 內 OPERATINGSTEP 數量；輸入 STEPS 節點，輸出步驟數。
+    function getRepairStepCount(stepsNode) {
+      let count = 0;
+      stepsNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "OPERATINGSTEP") count += 1;
+      });
+      return count;
+    }
+
+    // 中文註解：渲染 STEPS 節點；輸入起始序號，輸出有序的維修步驟內容。
+    function renderRepairSteps(stepsNode, container, context, startIndex) {
+      let stepIndex = startIndex || 0;
+      stepsNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "OPERATINGSTEP") {
+          stepIndex += 1;
+          renderRepairStep(child, container, { depth: context.depth, stepIndex });
+          return;
+        }
+        if (tag === "INCLUDE_PROCESS" || tag === "PROCESS") {
+          renderRepairNode(child, container, { depth: context.depth + 1 });
+          return;
+        }
+        renderRepairNode(child, container, context);
+      });
+    }
+
+    // 中文註解：渲染單一維修步驟；輸入 OPERATINGSTEP 與序號上下文，輸出 step section。
+    function renderRepairStep(stepNode, container, context) {
+      const stepDiv = document.createElement("section");
+      stepDiv.className = "repair-step";
+      const stepTitle = document.createElement("div");
+      stepTitle.className = "repair-step-title";
+      const stepText = document.createElement("span");
+      stepText.textContent = `步驟 ${context.stepIndex || 0} : `;
+      stepTitle.appendChild(stepText);
+      stepDiv.appendChild(stepTitle);
+      stepNode.childNodes.forEach((child) => renderRepairNode(child, stepDiv, context));
+      container.appendChild(stepDiv);
+    }
+
+    // 中文註解：渲染 WARNING/DAMAGE/HINT；輸入提示節點，輸出帶左側色條的提示區塊。
+    // 中文註解：渲染提示內文；輸入 TYPE_OF_DANGER/PROTECTION 等節點，有直接 GRAPHIC 時輸出左側 icon、右側文字，否則維持一般段落。
+    // 中文註解：渲染技術性附加資訊；輸入 TECH_INFO 節點，輸出以 GRAPHIC 作為 SIGNALWORD 前置 icon 的資訊區塊。
+    function renderRepairTechInfoBlock(techInfoNode, container, context) {
+      const block = document.createElement("div");
+      block.className = "repair-tech-info-block";
+
+      const signalWord = getFirstChildText(techInfoNode, "SIGNALWORD");
+      const graphicNodes = findDirectChildElementsByLocalTag(techInfoNode, "GRAPHIC");
+      if (signalWord || graphicNodes.length > 0) {
+        const titleRow = document.createElement("div");
+        titleRow.className = "repair-tech-info-title-row";
+        if (graphicNodes.length > 0) titleRow.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+        if (signalWord) {
+          const titleText = document.createElement("div");
+          titleText.className = "repair-tech-info-title-text";
+          titleText.textContent = signalWord;
+          titleRow.appendChild(titleText);
+        }
+        block.appendChild(titleRow);
+      }
+
+      const body = document.createElement("div");
+      body.className = "repair-tech-info-body";
+      techInfoNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && ["GRAPHIC", "SIGNALWORD"].includes(getLocalTagName(child))) return;
+        renderRepairNode(child, body, context);
+      });
+      if (body.textContent.trim() || body.children.length > 0) block.appendChild(body);
+      container.appendChild(block);
+    }
+    function renderRepairHintContentBlock(contentNode, container, context) {
+      const graphicNodes = findDirectChildElementsByLocalTag(contentNode, "GRAPHIC");
+      if (graphicNodes.length === 0) {
+        const block = document.createElement("p");
+        renderDocumentChildren(contentNode, block, renderRepairNode, context);
+        container.appendChild(block);
+        return;
+      }
+
+      const row = document.createElement("div");
+      row.className = "repair-inline-icon-row";
+      row.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+
+      const textWrap = document.createElement("div");
+      textWrap.className = "repair-inline-icon-text";
+      contentNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "GRAPHIC") return;
+        renderRepairNode(child, textWrap, context);
+      });
+      row.appendChild(textWrap);
+      container.appendChild(row);
+    }
+    function renderRepairHint(hintNode, container, context) {
+      const hintDiv = document.createElement("div");
+      hintDiv.className = "repair-hint";
+      const signalWord = getFirstChildText(hintNode, "SIGNALWORD") || getFirstChildText(hintNode, "TITLE");
+      const tag = getLocalTagName(hintNode);
+      if (tag === "DAMAGE" || /警告|危險|危险|注意|損壞|损坏/i.test(signalWord)) hintDiv.classList.add("attention");
+      if (signalWord) {
+        const graphicNodes = findDirectChildElementsByLocalTag(hintNode, "GRAPHIC");
+        if (graphicNodes.length > 0) {
+          const signalRow = document.createElement("div");
+          signalRow.className = "repair-inline-icon-row repair-signal-row";
+          signalRow.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+          const signalText = document.createElement("div");
+          signalText.className = "repair-inline-icon-text";
+          const signalParagraph = document.createElement("p");
+          signalParagraph.textContent = signalWord;
+          signalText.appendChild(signalParagraph);
+          signalRow.appendChild(signalText);
+          hintDiv.appendChild(signalRow);
+        } else {
+          const titleElement = document.createElement("div");
+          titleElement.className = "repair-hint-title";
+          titleElement.textContent = signalWord;
+          hintDiv.appendChild(titleElement);
+        }
+      }
+      hintNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const childTag = getLocalTagName(child);
+        if (childTag === "SIGNALWORD" || childTag === "GRAPHIC" || childTag === "TITLE") return;
+        renderRepairNode(child, hintDiv, context);
+      });
+      container.appendChild(hintDiv);
+    }
+
+    // 中文註解：渲染 HOTSPOT；輸入 HOTSPOT 節點，輸出保留 LINKID title 的 inline span。
+    // 中文註解：渲染右側文件清單；輸入 DOCUMENTLIST，輸出 div 清單，讓 HOTSPOT 項目自動換行而不是 inline span。
+    function renderRepairDocumentList(documentListNode) {
+      const list = document.createElement("div");
+      list.className = "repair-document-list";
+      const hotspotNodes = findDescendantElementsByLocalTags(documentListNode, ["HOTSPOT"]);
+      hotspotNodes.forEach((hotspotNode) => {
+        const item = document.createElement("div");
+        item.className = "repair-document-link";
+        const awNumber = getFirstChildText(hotspotNode, "AWNUMBER");
+        const title = getFirstChildText(hotspotNode, "TITLE");
+        item.textContent = [awNumber, title].filter(Boolean).join(" ") || hotspotNode.textContent.trim();
+        const linkId = hotspotNode.getAttribute("LINKID") || "";
+        if (linkId) item.setAttribute("title", `HOTSPOT: ${linkId}`);
+        list.appendChild(item);
+      });
+      if (list.children.length === 0) list.textContent = documentListNode.textContent.trim();
+      return list;
+    }
+    function renderHotspot(node) {
+      const span = document.createElement("span");
+      span.className = "hotspot";
+      span.textContent = node.textContent.trim();
+      const linkId = node.getAttribute("LINKID") || "";
+      if (linkId) span.setAttribute("title", `HOTSPOT: ${linkId}`);
+      return span;
+    }
+
+    // 中文註解：取得不含 namespace 前綴的 tag name；輸入 XML 節點，輸出大寫 local tag name。
+    function getLocalTagName(node) {
+      if (!node || node.nodeType !== Node.ELEMENT_NODE) return "";
+      const localName = node.localName || node.tagName || "";
+      return localName.split(":").pop().toUpperCase();
+    }
+
+    // 中文註解：深度尋找第一個指定 local tag；輸入根節點與 tag，輸出第一個符合的 Element。
+    function findFirstElementByLocalTag(node, targetTagName) {
+      if (!node) return null;
+      const target = String(targetTagName || "").toUpperCase();
+      if (node.nodeType === Node.ELEMENT_NODE && getLocalTagName(node) === target) return node;
+      for (const child of node.childNodes) {
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const found = findFirstElementByLocalTag(child, target);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    // 中文註解：尋找直接子層指定 local tag；輸入父節點與 tag，輸出第一個直接子元素。
+    function getFirstChildElement(parentNode, childTagName) {
+      if (!parentNode) return null;
+      const target = String(childTagName || "").toUpperCase();
+      for (const child of parentNode.childNodes) {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === target) return child;
+      }
+      return null;
+    }
+
+    // 中文註解：取得直接子層指定 local tag 的文字；輸入父節點與 tag，輸出 trim 後文字。
+    function getFirstChildText(parentNode, childTagName) {
+      const child = getFirstChildElement(parentNode, childTagName);
+      return child ? child.textContent.trim() : "";
+    }
+
+    // 中文註解：依序轉換所有子節點；可指定 renderer 與上下文，讓一般文件和維修文件共用流程。
+    function renderDocumentChildren(node, container, renderer, context) {
+      const renderFunction = typeof renderer === "function" ? renderer : renderDocumentNode;
+      node.childNodes.forEach((child) => renderFunction(child, container, context));
+    }
+
+    // 中文註解：轉換 XML 清單節點；輸入 LIST/GENERALLIST，輸出 ul 節點。
+    function renderDocumentList(listNode) {
+      const list = document.createElement("ul");
+      list.className = "xml-list";
+      const listType = (listNode.getAttribute("TYPE") || "").toUpperCase();
+      listNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "LISTENTRY" || tag === "LISTELEMENT") list.appendChild(renderDocumentListItem(child, listType));
+      });
+      return list;
+    }
+
+    // 中文註解：轉換 XML 清單項目；保留 LABEL 作為左側標號，沒有標號時依清單型態補預設符號。
+    function renderDocumentListItem(itemNode, listType) {
+      const item = document.createElement("li");
+      item.className = "xml-list-item";
+      const labelElement = document.createElement("span");
+      labelElement.className = "xml-list-label";
+      const bodyElement = document.createElement("div");
+      bodyElement.className = "xml-list-body";
+      let hasLabel = false;
+      let hasBody = false;
+      itemNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "LABEL") {
+          labelElement.textContent = child.textContent.trim();
+          hasLabel = !!labelElement.textContent;
+          return;
+        }
+        if (tag === "PARAGRAPH") {
+          const paragraph = document.createElement("p");
+          renderDocumentChildren(child, paragraph);
+          bodyElement.appendChild(paragraph);
+          hasBody = true;
+          return;
+        }
+        renderDocumentNode(child, bodyElement);
+        hasBody = true;
+      });
+      if (!hasLabel) labelElement.textContent = listType === "DASH" ? "–" : "•";
+      if (!hasBody) bodyElement.textContent = itemNode.textContent.trim();
+      item.appendChild(labelElement);
+      item.appendChild(bodyElement);
+      return item;
+    }
+
+    // 中文註解：轉換 XML 表格；讀取 COLSPEC 欄寬、THEAD/TBODY 與 ROW/ENTRY，輸出 viewer-style 表格。
+    function renderDocumentTable(tableNode, container) {
+      const table = document.createElement("table");
+      let tableGroup = null;
+      let hasTableHead = false;
+      let firstBodyRow = null;
+      tableNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "TGROUP") tableGroup = child;
+      });
+      if (!tableGroup) {
+        container.appendChild(table);
+        return;
+      }
+      const colspecs = [];
+      tableGroup.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "COLSPEC") colspecs.push(child);
+      });
+      const widths = [];
+      let totalWidth = 0;
+      colspecs.forEach((colspec) => {
+        const width = parseFloat(colspec.getAttribute("COLWIDTH") || "0") || 0;
+        widths.push(width);
+        totalWidth += width;
+      });
+      if (totalWidth > 0 && widths.length > 0) {
+        const colgroup = document.createElement("colgroup");
+        widths.forEach((width) => {
+          const col = document.createElement("col");
+          col.style.width = `${((width / totalWidth) * 100).toFixed(2)}%`;
+          colgroup.appendChild(col);
+        });
+        table.appendChild(colgroup);
+      }
+      tableGroup.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "THEAD") {
+          hasTableHead = true;
+          const thead = document.createElement("thead");
+          renderDocumentTableSection(child, thead, "th", true);
+          table.appendChild(thead);
+          return;
+        }
+        if (tag === "TBODY") {
+          const tbody = document.createElement("tbody");
+          firstBodyRow = renderDocumentTableSection(child, tbody, "td", false) || firstBodyRow;
+          table.appendChild(tbody);
+        }
+      });
+      if (!hasTableHead && firstBodyRow) firstBodyRow.classList.add("highlight-row");
+      container.appendChild(table);
+    }
+
+    // 中文註解：轉換 THEAD/TBODY 內的 ROW/ENTRY；支援 MOREROWS 合併列，輸出第一列供表格樣式使用。
+    function renderDocumentTableSection(sectionNode, sectionElement, cellTag, highlightAllRows) {
+      let firstRenderedRow = null;
+      sectionNode.childNodes.forEach((rowNode) => {
+        if (rowNode.nodeType !== Node.ELEMENT_NODE || getLocalTagName(rowNode) !== "ROW") return;
+        const row = document.createElement("tr");
+        if (!firstRenderedRow) firstRenderedRow = row;
+        if (highlightAllRows) row.classList.add("highlight-row");
+        rowNode.childNodes.forEach((entry) => {
+          if (entry.nodeType !== Node.ELEMENT_NODE || getLocalTagName(entry) !== "ENTRY") return;
+          const cell = document.createElement(cellTag);
+          const moreRows = parseInt(entry.getAttribute("MOREROWS") || "0", 10);
+          if (moreRows > 0) cell.rowSpan = moreRows + 1;
+          renderDocumentChildren(entry, cell);
+          row.appendChild(cell);
+        });
+        sectionElement.appendChild(row);
+      });
+      return firstRenderedRow;
+    }
+
+    // 中文註解：產生 HTML 顯示用的空狀態節點；輸入是提示文字，輸出是可插入文件預覽的 div。
+    function createDocumentEmptyMessage(message) {
+      const panel = document.createElement("div");
+      panel.className = "placeholder";
+      panel.textContent = message;
+      return panel;
+    }    // 中文註解：產生圖片查看按鈕，按鈕會記錄列索引，點擊時再取回對應資料與圖片檔。
+    function renderPictureButton(rowIndex, hasImage) {
+      const disabledText = hasImage ? "" : " disabled";
+      const titleText = hasImage ? "查看圖片" : "找不到對應圖片";
+      return `<td class="image-column"><button class="image-button" type="button" data-row-index="${rowIndex}" title="${titleText}"${disabledText}>圖</button></td>`;
+    }
+
+    // 中文註解：依目前 tab 的資料產生表格；若沒有資料，顯示空狀態而不是空白畫面。
+    function renderActiveTable() {
+      const currentRows = appState.filteredData[appState.activeTab] || [];
+      const currentColumns = tableColumns[appState.activeTab] || [];
+
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "尚未載入資料。");
+        return;
+      }
+
+      if (currentRows.length === 0) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, `${appState.activeTab} 沒有可顯示的資料。`);
+        return;
+      }
+
+      const isPictureTab = appState.activeTab === "PictureList_site" || appState.activeTab === "PictureList_pin";
+      const imageHeader = isPictureTab ? '<th class="image-column">圖片</th>' : "";
+      const tableHead = imageHeader + currentColumns.map((columnName) => `<th>${escapeHtml(columnName)}</th>`).join("");
+      const tableBody = currentRows.map((rowItem, rowIndex) => {
+        const imageCell = isPictureTab ? renderPictureButton(rowIndex, hasPictureFile(appState.activeTab, rowItem)) : "";
+        const cells = currentColumns.map((columnName) => `<td>${escapeTraditionalHtml(rowItem[columnName])}</td>`).join("");
+        return `<tr>${imageCell}${cells}</tr>`;
+      }).join("");
+
+      tableContainer.className = "table-wrap";
+      tableContainer.innerHTML = `
+        <table>
+          <thead><tr>${tableHead}</tr></thead>
+          <tbody>${tableBody}</tbody>
+        </table>
+      `;
+    }
+
+
+
+    // 中文註解：渲染第四個 Site 對應圖 tab，左側顯示 site 圖，右側顯示原始 Name_CN 與 pin 圖入口。
+    function renderCompareTab() {
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "尚未載入資料。");
+        return;
+      }
+
+      const siteItems = appState.filteredData.PictureList_site;
+      if (siteItems.length === 0) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "PictureList_site 沒有可顯示的資料。");
+        return;
+      }
+
+      if (appState.selectedSiteIndex >= siteItems.length) appState.selectedSiteIndex = 0;
+      const selectedSiteItem = siteItems[appState.selectedSiteIndex];
+      const selectedNames = getNameList(selectedSiteItem);
+      const selectedSiteFileId = String(selectedSiteItem && selectedSiteItem.FileID ? selectedSiteItem.FileID : "未提供").trim() || "未提供";
+      const sitePath = getPictureRelativePath("PictureList_site", selectedSiteItem);
+      const siteFile = appState.imageFileMap.get(sitePath);
+      const siteImageHtml = siteFile
+        ? `<img src="${createFileObjectUrl(siteFile)}" alt="${escapeHtml(sitePath)}">`
+        : `<div class="empty-state">找不到 Site 圖片：${escapeHtml(sitePath)}</div>`;
+      const optionsHtml = siteItems.map((siteItem, index) => {
+        const label = resolveComponentNames(siteItem);
+        const selectedText = index === appState.selectedSiteIndex ? " selected" : "";
+        return `<option value="${index}"${selectedText}>${escapeTraditionalHtml(label)}</option>`;
+      }).join("");
+      const nameListHtml = selectedNames.map((nameText) => {
+        const pinItem = findPinItemByName(nameText);
+        const pinPath = pinItem ? getPinPictureRelativePath(pinItem) : "";
+        const hasPinImage = pinPath ? appState.imageFileMap.has(pinPath) : false;
+        const pinDisplayName = `${selectedComponent.displayName}（${plugName}）`;
+        const buttonHtml = pinItem
+          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" data-pin-display-name="${escapeHtml(pinDisplayName)}" title="查看 Pin 圖"${disabledAttribute}>圖</button>`
+          : "";
+        return `<li class="raw-name-item"><span class="raw-name-text">${escapeTraditionalHtml(pinDisplayName)}</span>${buttonHtml}</li>`;
+      }).join("");
+
+      tableContainer.className = "compare-layout";
+      tableContainer.innerHTML = `
+        <section class="compare-left">
+          <div class="site-toolbar">
+            <label for="siteCompareSelect">PictureList_site 對應中文名稱</label>
+            <select id="siteCompareSelect" class="site-select">${optionsHtml}</select>
+          </div>
+          <div class="site-image-wrap">
+            <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+            <div class="site-image-body">${siteImageHtml}</div>
+          </div>
+        </section>
+        <section class="compare-right">
+          <p class="pin-list-title">Name_CN 原始值</p>
+          <ul class="raw-name-list">${nameListHtml || '<li class="raw-name-item"><span class="raw-name-text">沒有 Name_CN 資料</span></li>'}</ul>
+        </section>
+        <aside id="pinDrawer" class="pin-drawer" aria-label="Pin 圖片預覽">
+          <div class="pin-drawer-header">
+            <p id="pinDrawerTitle" class="pin-drawer-title">Pin 圖片</p>
+            <button id="pinDrawerClose" class="drawer-close" type="button" aria-label="關閉">×</button>
+          </div>
+          <div id="pinDrawerBody" class="pin-drawer-body"></div>
+        </aside>
+      `;
+    }
+
+    // 中文註解：渲染固定顯示的元件對應圖內容，左側為可搜尋元件列表與 Site 圖，右側為該元件 plugList。
+    function renderComponentCompareTab() {
+      if (!appState.rawData) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "尚未載入資料。");
+        return;
+      }
+
+      const allComponentItems = getComponentCompareItems();
+      if (allComponentItems.length === 0) {
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "沒有可對應 PictureList_site 的元件資料，或尚未載入名稱 JSON。");
+        return;
+      }
+
+      const componentItems = getVisibleComponentItems();
+
+      if (componentItems.length === 0) {
+        tableContainer.className = "compare-layout";
+        tableContainer.innerHTML = `
+          <section class="compare-left component-left">
+            <div class="component-main">
+              <div class="component-list-panel">
+                ${renderComponentSearchControlsHtml()}
+
+                <ul class="component-list"><li class="raw-name-item"><span class="raw-name-text">沒有符合的元件</span></li></ul>
+              </div>
+              <div class="component-image-panel"><div class="empty-state">請調整搜尋條件。</div></div>
+            </div>
+          </section>
+          <section class="compare-right component-compare-right">
+            <div class="component-right-section">
+              <p class="pin-list-title">插頭圖清單</p>
+              <ul class="raw-name-list"><li class="raw-name-item"><span class="raw-name-text">沒有插頭圖清單資料</span></li></ul>
+            </div>
+            <div class="component-right-section">
+              <p class="pin-list-title">相關文件</p>
+              <div class="index-tree"><div class="empty-state">請先選擇左側元件。</div></div>
+            </div>
+          </section>
+        `;
+        return;
+      }
+
+      const originalIndexByDisplayName = new Map(allComponentItems.map((componentItem, index) => [componentItem.displayName, index]));
+      const selectedKey = allComponentItems[appState.selectedComponentIndex] ? allComponentItems[appState.selectedComponentIndex].displayName : "";
+      let selectedFilteredIndex = componentItems.findIndex((componentItem) => componentItem.displayName === selectedKey);
+      if (selectedFilteredIndex < 0) {
+        selectedFilteredIndex = 0;
+        appState.selectedComponentIndex = allComponentItems.findIndex((componentItem) => componentItem.displayName === componentItems[0].displayName);
+      }
+
+      const selectedComponent = componentItems[selectedFilteredIndex];
+      const sitePath = getPictureRelativePath("PictureList_site", selectedComponent.siteItem);
+      const siteFile = appState.imageFileMap.get(sitePath);
+      const convertedSitePath = getConvertedSitePictureRelativePath(selectedComponent.siteItem);
+      const convertedSiteJsonPath = getConvertedSiteJsonRelativePath(selectedComponent.siteItem);
+      const selectedSiteFileId = String(selectedComponent.siteItem && selectedComponent.siteItem.FileID ? selectedComponent.siteItem.FileID : "未提供").trim() || "未提供";
+      // 中文註解：第五分頁中間位置圖標題需與左側選單名稱一致，並固定補上「位置圖」方便辨識目前圖片用途。
+      const selectedSiteTitle = `${selectedComponent.displayName} 位置圖`;
+      const siteImageHtml = siteFile
+        ? `<img src="${createFileObjectUrl(siteFile)}" alt="${escapeHtml(sitePath)}">`
+        : `<div class="empty-state">找不到 Site 圖片：${escapeHtml(sitePath)}</div>`;
+      const componentListHtml = componentItems.map((componentItem) => {
+        const originalIndex = originalIndexByDisplayName.get(componentItem.displayName);
+        const activeClass = componentItem.displayName === selectedComponent.displayName ? " active" : "";
+        return `<li><button class="component-list-item${activeClass}" type="button" data-component-index="${originalIndex}">${escapeTraditionalHtml(componentItem.displayName)}</button></li>`;
+      }).join("");
+      const matchedPlugList = selectedComponent.plugList.filter(hasMatchingSiteNameForPlug);
+      const plugListHtml = matchedPlugList.map((plugName) => {
+        const pinItem = findPinItemByName(plugName);
+        const pinPath = pinItem ? getPinPictureRelativePath(pinItem) : "";
+        const hasPinImage = pinPath ? appState.imageFileMap.has(pinPath) : false;
+        const disabledAttribute = hasPinImage ? "" : " disabled";
+        const pinDisplayName = `${selectedComponent.displayName}（${plugName}）`;
+        const buttonHtml = pinItem
+          ? `<button class="pin-button" type="button" data-pin-file-id="${escapeHtml(pinItem.FileID)}" data-pin-display-name="${escapeHtml(pinDisplayName)}" data-plug-name="${escapeHtml(plugName)}" title="查看 Pin 圖"${disabledAttribute}>圖</button>`
+          : "";
+        return `<li class="raw-name-item component-pin-item" data-plug-name="${escapeHtml(plugName)}" data-pin-file-id="${escapeHtml(pinItem ? pinItem.FileID : "")}" data-pin-display-name="${escapeHtml(pinDisplayName)}"><span class="raw-name-text">${escapeTraditionalHtml(pinDisplayName)}</span>${buttonHtml}</li>`;
+      }).join("");
+
+      tableContainer.className = "compare-layout";
+      tableContainer.innerHTML = `
+        <section class="compare-left component-left">
+          <div class="component-main">
+            <div class="component-list-panel">
+              ${renderComponentSearchControlsHtml()}
+
+              <ul class="component-list">${componentListHtml}</ul>
+            </div>
+            <div class="component-image-panel">
+              <div class="component-image-stack">
+                <div class="component-title-section">
+                  <div class="component-site-title">${escapeTraditionalHtml(selectedSiteTitle)}</div>
+                  <div class="site-file-id">FileID：${escapeHtml(selectedSiteFileId)}</div>
+                </div>
+                <!-- 中文註解：原始檔區沿用目前 PictureList_site 圖片解析結果，左側固定垂直標籤方便與轉換後區塊對照。 -->
+                <div class="component-image-section">
+                  <div class="component-image-side-label">原始檔</div>
+                  <div class="component-image-section-body">
+                    <div class="site-image-wrap"><div class="site-image-body">${siteImageHtml}</div></div>
+                  </div>
+                </div>
+                <!-- 中文註解：轉換後區塊使用 canvas 疊合 restyler 圖與 JSON 標註，讓符合右側插頭清單的 OCR 與箭頭顯示在圖上。 -->
+                <div class="component-image-section">
+                  <div class="component-image-side-label">轉換後</div>
+                  <div class="component-image-section-body">
+                    <div class="converted-canvas-wrap">
+                      <canvas class="converted-site-canvas" aria-label="轉換後位置圖標註"></canvas>
+                      <div class="converted-canvas-status">轉換後圖片載入中...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="compare-right component-compare-right">
+          <div class="component-right-section">
+            <p class="pin-list-title">${escapeTraditionalHtml(selectedComponent.displayName)} 插頭圖清單</p>
+            <ul class="raw-name-list">${plugListHtml || '<li class="raw-name-item"><span class="raw-name-text">沒有插頭圖清單資料</span></li>'}</ul>
+          </div>
+          <div class="component-right-section">
+            <p class="pin-list-title">${escapeTraditionalHtml(selectedComponent.name)} 相關文件</p>
+            <div class="index-tree">${renderIndexTreeHtml(selectedComponent.name)}</div>
+          </div>
+        </section>
+        <aside id="pinDrawer" class="pin-drawer" aria-label="Pin 圖片預覽">
+          <div class="pin-drawer-header">
+            <p id="pinDrawerTitle" class="pin-drawer-title">Pin 圖片</p>
+            <button id="pinDrawerClose" class="drawer-close" type="button" aria-label="關閉">×</button>
+          </div>
+          <div id="pinDrawerBody" class="pin-drawer-body"></div>
+        </aside>
+      `;
+
+      const componentList = tableContainer.querySelector(".component-list");
+      if (componentList) componentList.scrollTop = appState.componentListScrollTop;
+      renderConvertedSiteCanvas(tableContainer.querySelector(".converted-canvas-wrap"), convertedSitePath, convertedSiteJsonPath, matchedPlugList);
+    }
+    // 中文註解：目前畫面已固定為最後一個「元件對應圖」內容；保留統一入口，讓載入 JSON、名稱 JSON、索引 JSON 後都能刷新同一個畫面。
+    function renderActiveView() {
+      const contentPanel = document.getElementById("content");
+      if (contentPanel) contentPanel.classList.add("compare-content");
+      renderComponentCompareTab();
+    }
+
+    // 中文註解：更新檔案載入摘要，讓使用者知道各清單過濾與去重後剩下多少筆資料。
+    function renderSummary(fileName) {
+      const projectCount = appState.filteredData.ProjectList.length;
+      const siteCount = appState.filteredData.PictureList_site.length;
+      const pinCount = appState.filteredData.PictureList_pin.length;
+      const imageCount = appState.imageFileMap.size;
+      const jsonCount = appState.jsonFiles.length;
+      const compeName = appState.currentCompeFile ? getFolderRelativePath(appState.currentCompeFile) : "未載入名稱 JSON";
+      const indexName = appState.currentIndexJsonFile ? getFolderRelativePath(appState.currentIndexJsonFile) : "未載入索引 JSON";
+      summaryElement.textContent = `已載入 ${fileName}：ProjectList ${projectCount} 筆，PictureList_site ${siteCount} 筆，PictureList_pin ${pinCount} 筆，圖片索引 ${imageCount} 個，JSON ${jsonCount} 個，名稱對應：${compeName}，索引：${indexName}。`;
+      summaryElement.classList.remove("error");
+    }
+
+
+    // 中文註解：釋放前一次預覽圖片建立的暫存網址，避免長時間使用後佔用記憶體。
+    function revokeCurrentImageUrl() {
+      if (appState.currentImageUrl) {
+        revokeBlobUrl(appState.currentImageUrl);
+        appState.currentImageUrl = "";
+      }
+    }
+
+
+
+    // 中文註解：釋放右側滑出 pin 圖片網址；輸入／輸出走 appState，會一次清掉原始圖與轉換後圖的暫存網址。
+    function revokeCurrentPinDrawerUrl() {
+      appState.currentPinDrawerUrls.forEach(revokeBlobUrl);
+      appState.currentPinDrawerUrls = [];
+    }
+
+    // 中文註解：開啟圖片 dialog；輸入為目前列資料，輸出為使用者可檢視的圖片預覽。
+    function openImageDialog(rowItem) {
+      const picturePath = getPictureRelativePath(appState.activeTab, rowItem);
+      const imageFile = appState.imageFileMap.get(picturePath);
+
+      revokeCurrentImageUrl();
+      dialogTitle.textContent = `圖片預覽：${picturePath || "無檔案路徑"}`;
+
+      if (!imageFile) {
+        dialogBody.innerHTML = `<div class="empty-state">找不到對應圖片：${escapeHtml(picturePath || "FileID 空白")}</div>`;
+        imageDialog.showModal();
+        return;
+      }
+
+      appState.currentImageUrl = createFileObjectUrl(imageFile);
+      dialogBody.innerHTML = `<img src="${appState.currentImageUrl}" alt="${escapeHtml(picturePath)}">`;
+      imageDialog.showModal();
+    }
+
+
+
+    // 中文註解：建立 Pin 抽屜中的單張圖片區塊；輸入為標題、路徑與 File，輸出為原始檔或轉換後圖片 HTML。
+    function renderPinDrawerImageSection(headingText, picturePath, imageFile) {
+      if (!imageFile) {
+        return `
+          <section class="pin-image-section">
+            <p class="pin-image-heading">${escapeHtml(headingText)}</p>
+            <div class="pin-image-content"><div class="empty-state">找不到 Pin 圖片：${escapeHtml(picturePath || "FileID 空白")}</div></div>
+          </section>
+        `;
+      }
+
+      const imageUrl = createFileObjectUrl(imageFile);
+      appState.currentPinDrawerUrls.push(imageUrl);
+      return `
+        <section class="pin-image-section">
+          <p class="pin-image-heading">${escapeHtml(headingText)}</p>
+          <div class="pin-image-content"><img src="${imageUrl}" alt="${escapeHtml(picturePath)}"></div>
+        </section>
+      `;
+    }
+
+    // 中文註解：開啟元件對應圖的右側滑出 pin 圖片面板；輸入為 pin 資料列與清單顯示名稱，輸出為上下排列的原始檔與轉換後 Pin 圖。
+    function openPinDrawer(pinItem, pinDisplayName) {
+      const pinDrawer = document.getElementById("pinDrawer");
+      const pinDrawerTitle = document.getElementById("pinDrawerTitle");
+      const pinDrawerBody = document.getElementById("pinDrawerBody");
+      if (!pinDrawer || !pinDrawerTitle || !pinDrawerBody) return;
+
+      const pinPath = getPinPictureRelativePath(pinItem);
+      const convertedPinPath = getConvertedPinPictureRelativePath(pinItem);
+      const pinFile = appState.imageFileMap.get(pinPath);
+      const convertedPinFile = appState.imageFileMap.get(convertedPinPath.toLowerCase());
+      revokeCurrentPinDrawerUrl();
+      pinDrawerTitle.innerHTML = `<span class="pin-drawer-title-name">${escapeTraditionalHtml(pinDisplayName || "Pin 圖片")}</span><span class="pin-drawer-title-path">${escapeHtml(pinPath || "無檔案路徑")}</span>`;
+      pinDrawerBody.innerHTML = [
+        renderPinDrawerImageSection("原始檔", pinPath, pinFile),
+        renderPinDrawerImageSection("轉換後", convertedPinPath, convertedPinFile),
+      ].join("");
+      pinDrawer.classList.add("open");
+    }
+
+    // 中文註解：關閉元件對應圖的右側滑出面板並釋放圖片網址；箭頭提示需保留到使用者再次點選清單才清除。
+    function closePinDrawer() {
+      const pinDrawer = document.getElementById("pinDrawer");
+      if (pinDrawer) pinDrawer.classList.remove("open");
+      revokeCurrentPinDrawerUrl();
+    }
+
+    // 中文註解：處理表格內圖片按鈕點擊，透過列索引找到目前 tab 的原始資料。
+    function handleTableClick(event) {
+      const imageButton = event.target.closest(".image-button");
+      if (imageButton && !imageButton.disabled) {
+        const rowIndex = Number(imageButton.dataset.rowIndex);
+        const currentRows = appState.filteredData[appState.activeTab] || [];
+        const rowItem = currentRows[rowIndex];
+        if (rowItem) openImageDialog(rowItem);
+        return;
+      }
+
+      const filterToggle = event.target.closest("#componentFilterToggle");
+      if (filterToggle) {
+        const componentList = tableContainer.querySelector(".component-list");
+        appState.componentListScrollTop = componentList ? componentList.scrollTop : 0;
+        appState.componentRequirePlugImageAndDocument = !appState.componentRequirePlugImageAndDocument;
+        closePinDrawer();
+        renderComponentCompareTab();
+        return;
+      }
+
+      const componentButton = event.target.closest(".component-list-item");
+      if (componentButton) {
+        const componentList = tableContainer.querySelector(".component-list");
+        appState.componentListScrollTop = componentList ? componentList.scrollTop : 0;
+        appState.selectedComponentIndex = Number(componentButton.dataset.componentIndex);
+        closePinDrawer();
+        renderComponentCompareTab();
+        return;
+      }
+
+      const pinButton = event.target.closest(".pin-button");
+      if (pinButton && !pinButton.disabled) {
+        const pinItem = appState.filteredData.PictureList_pin.find((item) => String(item.FileID) === String(pinButton.dataset.pinFileId));
+        if (pinItem) {
+          openPinDrawer(pinItem, pinButton.dataset.pinDisplayName || "");
+          toggleConvertedSiteArrowForPlug(pinButton.dataset.plugName || "", `${pinButton.dataset.pinFileId || ""}|${pinButton.dataset.plugName || ""}`);
+        }
+        return;
+      }
+
+      const componentPinItem = event.target.closest(".component-pin-item");
+      if (componentPinItem) {
+        toggleConvertedSiteArrowForPlug(componentPinItem.dataset.plugName || "", `${componentPinItem.dataset.pinFileId || ""}|${componentPinItem.dataset.plugName || ""}`);
+        return;
+      }
+
+      const indexDocumentButton = event.target.closest(".index-leaf-button");
+      if (indexDocumentButton) {
+        openIndexDocumentWindow({
+          documentType: indexDocumentButton.dataset.documentType || "",
+          parentName: indexDocumentButton.dataset.parentName || "",
+          nameCn: indexDocumentButton.dataset.nameCn || "",
+          xmlNb: indexDocumentButton.dataset.xmlNb || "",
+          factFileName: indexDocumentButton.dataset.factFileName || "",
+        });
+        return;
+      }
+
+      if (event.target.closest("#pinDrawerClose")) {
+        closePinDrawer();
+      }
+    }
+
+    // 中文註解：處理第 5 分頁左側關鍵字搜尋；debounce 後重繪，並在下一幀安全還原焦點與游標。
+    function handleTableInput(event) {
+      if (event.target.id === "componentSearchInput") {
+        const cursorStart = event.target.selectionStart;
+        const cursorEnd = event.target.selectionEnd;
+        appState.componentSearchKeyword = event.target.value;
+        appState.componentListScrollTop = 0;
+        closePinDrawer();
+
+        if (appState.componentSearchTimer) {
+          clearTimeout(appState.componentSearchTimer);
+        }
+
+        appState.componentSearchTimer = setTimeout(() => {
+          appState.componentSearchTimer = null;
+          renderComponentCompareTab();
+          requestAnimationFrame(() => {
+            const searchInput = document.getElementById("componentSearchInput");
+            if (!searchInput) return;
+            searchInput.focus();
+            if (typeof cursorStart === "number" && typeof cursorEnd === "number") {
+              searchInput.setSelectionRange(cursorStart, cursorEnd);
+            }
+          });
+        }, 120);
+      }
+    }
+    // 中文註解：處理第四個 tab 的 Site 選單切換，更新左側圖片與右側 Name_CN 清單。
+    function handleTableChange(event) {
+      if (event.target.id === "siteCompareSelect") {
+        appState.selectedSiteIndex = Number(event.target.value);
+        closePinDrawer();
+        renderCompareTab();
+      }
+    }
+
+    // 中文註解：清除頁面錯誤清單；輸入／輸出走 appState 與錯誤 DOM，供重新載入資料夾時重設狀態。
+    function clearLoadErrors() {
+      appState.loadErrors = [];
+      if (loadErrorsElement) {
+        loadErrorsElement.textContent = "";
+        loadErrorsElement.classList.add("hidden");
+      }
+    }
+
+    // 中文註解：記錄可恢復的載入錯誤；輸入為錯誤訊息與 Error，輸出到頁面與 console，但不中斷其他 JSON 載入。
+    function reportLoadError(message, error) {
+      const detail = error && error.message ? `${message}：${error.message}` : message;
+      appState.loadErrors.push(detail);
+      console.error(detail, error || "");
+      if (loadErrorsElement) {
+        loadErrorsElement.textContent = appState.loadErrors.join("\n");
+        loadErrorsElement.classList.remove("hidden");
+      }
+    }
+
+    // 中文註解：顯示會阻止主要畫面載入的錯誤；輸入為訊息與 Error，輸出為摘要區與主內容錯誤狀態。
+    function showBlockingLoadError(message, error) {
+      reportLoadError(message, error);
+      summaryElement.textContent = message;
+      summaryElement.classList.add("error");
+      tableContainer.className = "empty-state";
+      setTraditionalText(tableContainer, message);
+    }
+
+    // 中文註解：預先解析所有 JSON；輸入為 JSON 檔案清單，輸出為 parsedJsonCache，單一檔案失敗不影響其他檔案。
+    async function preloadJsonFiles(jsonFiles) {
+      for (const jsonFile of jsonFiles) {
+        try {
+          await readJsonObjectFile(jsonFile);
+        } catch (error) {
+          reportLoadError(`無法解析 ${getFolderRelativePath(jsonFile)}`, error);
+        }
+      }
+    }
+
+    // 中文註解：重設目前載入狀態；輸入是資料夾檔案清單，輸出為重新建立的 JSON/圖片/XML 索引。
+    function resetLoadedFiles(selectedFiles) {
+      appState.folderFiles = selectedFiles;
+      appState.parsedJsonCache = new Map();
+      appState.jsonFiles = findJsonFiles(selectedFiles);
+      appState.compeFiles = findCompeJsonFiles(selectedFiles);
+      appState.indexJsonFiles = findIndexJsonFiles(selectedFiles);
+      appState.xmlDocumentUseFiles = findXmlDocumentUseJsonFiles(selectedFiles);
+      appState.imageFileMap = buildImageFileMap(selectedFiles);
+      appState.xmlUseImageFileMap = buildXmlUseImageFileMap(selectedFiles);
+      appState.rawData = null;
+      appState.compeData = {};
+      appState.indexData = null;
+      appState.xmlDocumentUseData = {};
+      appState.currentJsonFile = null;
+      appState.currentCompeFile = null;
+      appState.currentIndexJsonFile = null;
+      appState.selectedSiteIndex = 0;
+      appState.selectedComponentIndex = 0;
+      appState.componentSearchKeyword = "";
+      appState.componentListScrollTop = 0;
+      appState.filteredData = buildFilteredData({});
+      invalidateComponentFilterCache();
+      closePinDrawer();
+      renderJsonSelect();
+      renderCompeSelect();
+      renderIndexJsonSelect();
+      revokeDocumentImageUrls();
+    }
+
+    // 中文註解：將 server 回傳的 data 檔案清單載入既有畫面；輸入為遠端檔案資訊，輸出為自動完成的元件對應圖畫面。
+    async function loadRemoteDataFiles(remoteFiles) {
+      clearLoadErrors();
+      showLoading("正在解析 JSON...");
+      const selectedFiles = remoteFiles.map(createRemoteFileInfo);
+      resetLoadedFiles(selectedFiles);
+      const allJsonFiles = selectedFiles.filter((file) => file.name.toLowerCase().endsWith(".json"));
+      await preloadJsonFiles(allJsonFiles);
+
+      if (appState.xmlDocumentUseFiles.length > 0) {
+        await loadXmlDocumentUseFile(appState.xmlDocumentUseFiles[0]);
+      }
+
+      if (appState.indexJsonFiles.length > 0) {
+        indexJsonSelect.value = "0";
+        await loadIndexJsonFile(appState.indexJsonFiles[0]);
+      }
+
+      if (appState.compeFiles.length > 0) {
+        compeSelect.value = "0";
+        await loadCompeFile(appState.compeFiles[0]);
+      }
+
+      if (appState.jsonFiles.length === 0) {
+        showBlockingLoadError("data 資料夾內沒有可作為主資料的 JSON，請放入 *_data.json 或一般 .json 檔。", null);
+        return;
+      }
+
+      jsonSelect.value = "0";
+      await loadJsonFile(appState.jsonFiles[0]);
+      setTopCollapsed(true);
+    }
+
+    // 中文註解：啟動時呼叫本機 API；輸入為 /api/files 回應，輸出為自動讀取 data 資料夾或顯示可診斷錯誤。
+    async function autoLoadDataFolder() {
+      if (!window.location.protocol.startsWith("http")) {
+        showBlockingLoadError("請使用 start.bat 啟動本機伺服器，不要直接用 file:// 開啟 HTML。", null);
+        return;
+      }
+
+      showLoading("正在讀取 data 資料夾...");
+      try {
+        const response = await fetch("/api/files", { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.ok) {
+          showBlockingLoadError(payload.error || "無法讀取 data 資料夾。", null);
+          return;
+        }
+
+        if (!Array.isArray(payload.jsonFiles) || payload.jsonFiles.length === 0) {
+          showBlockingLoadError("data 資料夾內沒有 JSON 檔案。", null);
+          return;
+        }
+
+        await loadRemoteDataFiles(Array.isArray(payload.files) ? payload.files : []);
+        appState.autoLoadCompleted = true;
+      } catch (error) {
+        showBlockingLoadError("自動讀取 data 資料夾失敗，請確認 server.py 是否正常啟動。", error);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // 中文註解：更新 JSON 下拉選單；多個 JSON 時讓使用者可切換，單一 JSON 時仍保留目前自動載入流程。
+    function renderJsonSelect() {
+      jsonSelect.innerHTML = appState.jsonFiles.map((file, index) => {
+        const relativePath = getFolderRelativePath(file);
+        const label = isLikelyMainJson(file) ? relativePath : `${relativePath}（輔助）`;
+        return `<option value="${index}">${escapeTraditionalHtml(label)}</option>`;
+      }).join("");
+
+      jsonPicker.classList.toggle("hidden", appState.jsonFiles.length <= 1);
+    }
+
+
+
+    // 中文註解：更新名稱 JSON 下拉選單；多個 _compe_plugs.json 時讓使用者可切換來源。
+    function renderCompeSelect() {
+      compeSelect.innerHTML = appState.compeFiles.map((file, index) => `<option value="${index}">${escapeTraditionalHtml(getFolderRelativePath(file))}</option>`).join("");
+      compePicker.classList.toggle("hidden", appState.compeFiles.length <= 1);
+    }
+
+    // 中文註解：更新索引 JSON 下拉選單；索引資料供第 5 分頁右下角 explorer-style 樹狀清單使用。
+    function renderIndexJsonSelect() {
+      indexJsonSelect.innerHTML = appState.indexJsonFiles.map((file, index) => {
+        const relativePath = getFolderRelativePath(file);
+        const label = isExplorerIndexJsonFile(file) ? relativePath : `${relativePath}（請確認為 explorer 索引格式）`;
+        return `<option value="${index}">${escapeTraditionalHtml(label)}</option>`;
+      }).join("");
+      indexJsonPicker.classList.toggle("hidden", appState.indexJsonFiles.length === 0);
+    }
+
+    // 中文註解：讀取 explorer.html 格式索引 JSON；輸入是 File 或遠端檔案描述，輸出會更新右下角樹狀清單資料來源。
+    async function loadIndexJsonFile(indexJsonFile) {
+      if (!indexJsonFile) {
+        appState.indexData = null;
+        appState.currentIndexJsonFile = null;
+        invalidateComponentFilterCache();
+        renderActiveView();
+        return;
+      }
+
+      try {
+        appState.indexData = await readJsonObjectFile(indexJsonFile);
+        appState.currentIndexJsonFile = indexJsonFile;
+      } catch (error) {
+        appState.indexData = null;
+        appState.currentIndexJsonFile = null;
+        reportLoadError(`無法解析索引 JSON ${getFolderRelativePath(indexJsonFile)}`, error);
+      }
+
+      if (appState.currentJsonFile) renderSummary(getFolderRelativePath(appState.currentJsonFile));
+      invalidateComponentFilterCache();
+      renderActiveView();
+    }
+
+    // 中文註解：讀取 XML 文件圖片對應 JSON；輸入是 File 或遠端檔案描述，輸出會更新 GRAPHIC SRC 到 Picture/XmlUse 檔名的對應表。
+    async function loadXmlDocumentUseFile(xmlDocumentUseFile) {
+      if (!xmlDocumentUseFile) {
+        appState.xmlDocumentUseData = {};
+        return;
+      }
+
+      try {
+        appState.xmlDocumentUseData = await readJsonObjectFile(xmlDocumentUseFile);
+      } catch (error) {
+        appState.xmlDocumentUseData = {};
+        reportLoadError(`無法解析 XML 圖片對應 JSON ${getFolderRelativePath(xmlDocumentUseFile)}`, error);
+      }
+    }
+
+    // 中文註解：讀取名稱對應 JSON；輸入是 File 或遠端檔案描述，失敗時保留空物件，元件對應圖會退回顯示原始 key。
+    async function loadCompeFile(compeFile) {
+      if (!compeFile) {
+        appState.compeData = {};
+        appState.currentCompeFile = null;
+        invalidateComponentFilterCache();
+        renderActiveView();
+        return;
+      }
+
+      try {
+        appState.compeData = await readJsonObjectFile(compeFile);
+        appState.currentCompeFile = compeFile;
+      } catch (error) {
+        appState.compeData = {};
+        appState.currentCompeFile = null;
+        reportLoadError(`無法解析名稱 JSON ${getFolderRelativePath(compeFile)}`, error);
+      }
+
+      if (appState.currentJsonFile) renderSummary(getFolderRelativePath(appState.currentJsonFile));
+      invalidateComponentFilterCache();
+      renderActiveView();
+    }
+
+    // 中文註解：讀取指定 JSON 檔，解析成功後更新畫面資料；輸入是 File 或遠端檔案描述，輸出是目前表格畫面。
+    async function loadJsonFile(jsonFile) {
+      if (!jsonFile) {
+        return;
+      }
+
+      try {
+        const parsedData = await readJsonObjectFile(jsonFile);
+        appState.rawData = parsedData;
+        appState.currentJsonFile = jsonFile;
+        appState.selectedSiteIndex = 0;
+        appState.selectedComponentIndex = 0;
+        appState.componentSearchKeyword = "";
+        appState.componentListScrollTop = 0;
+        closePinDrawer();
+        appState.filteredData = buildFilteredData(parsedData);
+        invalidateComponentFilterCache();
+        renderSummary(getFolderRelativePath(jsonFile));
+        renderActiveView();
+      } catch (error) {
+        appState.rawData = null;
+        appState.currentJsonFile = null;
+        tableContainer.className = "empty-state";
+        setTraditionalText(tableContainer, "JSON 格式錯誤，請確認檔案內容。");
+        summaryElement.textContent = `無法解析 ${getFolderRelativePath(jsonFile)}：${error.message}`;
+        summaryElement.classList.add("error");
+        reportLoadError(`無法解析 ${getFolderRelativePath(jsonFile)}`, error);
+      }
+    }
+
+    // 中文註解：處理資料夾選取；建立圖片索引與 JSON 清單，並自動載入排序後第一個 JSON。
+    async function handleFolderChange(event) {
+      showLoading("正在載入選取資料夾...");
+      try {
+        clearLoadErrors();
+        const selectedFiles = Array.from(event.target.files || []);
+        resetLoadedFiles(selectedFiles);
+        await preloadJsonFiles(selectedFiles.filter((file) => file.name.toLowerCase().endsWith(".json")));
+
+        if (appState.xmlDocumentUseFiles.length > 0) {
+          await loadXmlDocumentUseFile(appState.xmlDocumentUseFiles[0]);
+        }
+
+        if (appState.indexJsonFiles.length > 0) {
+          indexJsonSelect.value = "0";
+          await loadIndexJsonFile(appState.indexJsonFiles[0]);
+        }
+
+        if (appState.compeFiles.length > 0) {
+          compeSelect.value = "0";
+          await loadCompeFile(appState.compeFiles[0]);
+        }
+
+        if (appState.jsonFiles.length === 0) {
+          tableContainer.className = "empty-state";
+          setTraditionalText(tableContainer, "找不到 JSON 檔案，請選擇 parse_ssp_xml_gui.py 輸出的資料夾。");
+          setTraditionalText(summaryElement, "資料夾內沒有可用的 JSON 檔案。");
+          summaryElement.classList.add("error");
+          return;
+        }
+
+        jsonSelect.value = "0";
+        await loadJsonFile(appState.jsonFiles[0]);
+        setTopCollapsed(true);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // 中文註解：處理下拉選單切換 JSON；圖片根目錄仍沿用同一個已選資料夾，載入期間顯示遮罩避免使用者誤以為畫面卡住。
+    async function handleJsonSelectChange(event) {
+      const selectedIndex = Number(event.target.value);
+      const selectedJsonFile = appState.jsonFiles[selectedIndex];
+      showLoading(`正在載入 ${getFolderRelativePath(selectedJsonFile) || "JSON"}...`);
+      try {
+        await loadJsonFile(selectedJsonFile);
+      } finally {
+        hideLoading();
+      }
+    }
+
+
+
+    // 中文註解：處理名稱 JSON 下拉切換；輸入為下拉選單事件，輸出為重新解析名稱並刷新元件對應畫面。
+    async function handleCompeSelectChange(event) {
+      const selectedIndex = Number(event.target.value);
+      const selectedFile = appState.compeFiles[selectedIndex];
+      showLoading(`正在載入 ${getFolderRelativePath(selectedFile) || "名稱 JSON"}...`);
+      try {
+        await loadCompeFile(selectedFile);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // 中文註解：處理索引 JSON 下拉切換；輸入為下拉選單事件，輸出為重新解析後刷新右下角文件樹。
+    async function handleIndexJsonSelectChange(event) {
+      const selectedIndex = Number(event.target.value);
+      const selectedFile = appState.indexJsonFiles[selectedIndex];
+      showLoading(`正在載入 ${getFolderRelativePath(selectedFile) || "索引 JSON"}...`);
+      try {
+        await loadIndexJsonFile(selectedFile);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    topToggleButton.addEventListener("click", toggleTopPanel);
+    folderInput.addEventListener("change", handleFolderChange);
+    jsonSelect.addEventListener("change", handleJsonSelectChange);
+    compeSelect.addEventListener("change", handleCompeSelectChange);
+    indexJsonSelect.addEventListener("change", handleIndexJsonSelectChange);
+    tableContainer.addEventListener("click", handleTableClick);
+    tableContainer.addEventListener("change", handleTableChange);
+    tableContainer.addEventListener("input", handleTableInput);
+    dialogCloseButton.addEventListener("click", () => imageDialog.close());
+    imageDialog.addEventListener("close", revokeCurrentImageUrl);
+    documentDialogCloseButton.addEventListener("click", () => documentDialog.close());
+    documentDialog.addEventListener("close", () => {
+      revokeDocumentImageUrls();
+      documentDialogTitle.textContent = "文件預覽";
+      documentDialogBody.innerHTML = "";
+    });
+
+    // 中文註解：頁面載入完成後自動讀取 localTool/data；若使用者未透過 start.bat 啟動，會在畫面顯示提醒。
+    autoLoadDataFolder();
+
+
+  </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
