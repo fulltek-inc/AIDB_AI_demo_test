@@ -344,6 +344,362 @@
       overflow: auto;
     }
 
+    .original-document-panel .document-compare-content {
+      padding: 0;
+      background: #ffffff;
+    }
+
+    .original-document-view {
+      min-height: 100%;
+      padding: 10px 8px 28px;
+      background: #ffffff;
+      color: #111827;
+      font-family: "Microsoft JhengHei", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-document-title {
+      margin: 0 0 14px;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-document-section-title {
+      margin: 18px 0 34px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .original-document-core-title {
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .original-process {
+      margin: 0 0 24px;
+    }
+
+    .original-process-title {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-step-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 48%) minmax(180px, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin: 12px 0;
+    }
+
+    .original-step-row+.original-step-row {
+      margin-top: 14px;
+    }
+
+    .original-step-row-no-graphic {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .original-step-graphics,
+    .original-step-text {
+      min-width: 0;
+    }
+
+    .original-step-text ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .original-step-text li {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-step-text p {
+      margin: 0;
+    }
+
+    .original-document-view .hotspot,
+    .original-image-number {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .original-document-view .xml-use-image-wrap {
+      margin: 0 0 12px;
+      padding: 0;
+      border: 1px solid #5f6368;
+      border-radius: 0;
+      background: #ffffff;
+    }
+
+    .original-document-view .xml-use-image-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .original-document-view .placeholder {
+      margin: 0 0 12px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .original-more-info {
+      margin: 0 0 16px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-more-info a,
+    .original-hint-links a {
+      color: #1d4ed8;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+
+    .original-repair-hints {
+      margin: 0 0 20px;
+    }
+
+    .original-hint-box {
+      margin: 16px 0;
+      border: 1px solid transparent;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-hint-box.warning {
+      border-color: #ff8a1c;
+      background: #ffe0bd;
+    }
+
+    .original-hint-box.damage {
+      border-color: #1a8fcb;
+      background: #9ee3ff;
+    }
+    .original-hint-box.info {
+      border-color: #3b82f6;
+      background: #dbeafe;
+    }
+
+    .original-hint-box.info .original-hint-header {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .original-hint-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 26px;
+      padding: 3px 12px;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .original-hint-box.warning .original-hint-header {
+      background: #ff8617;
+      color: #111827;
+    }
+
+    .original-hint-box.damage .original-hint-header {
+      background: #0b75b4;
+      color: #ffffff;
+    }
+
+    .original-hint-icon {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .original-hint-body {
+      margin: 0 10px 12px;
+      padding: 12px 14px;
+      background: #ffffff;
+    }
+
+    .original-hint-box.warning .original-hint-body {
+      background: #ffffff;
+    }
+
+    .original-hint-box.damage .original-hint-body {
+      background: #ffffff;
+    }
+
+    .original-hint-main {
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+
+    .original-hint-detail {
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+
+    .original-hint-list {
+      margin: 6px 0 0 18px;
+      padding: 0;
+    }
+
+    .original-hint-list li {
+      margin: 0 0 2px;
+      padding-left: 2px;
+    }
+
+    .original-hint-links {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0 0 18px;
+    }
+    .original-generic-block {
+      margin: 8px 0;
+    }
+
+    .original-generic-block p {
+      margin: 0 0 6px;
+    }
+
+    .original-generic-title {
+      margin: 10px 0 6px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .original-document-links {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 10px 18px;
+    }
+
+    .original-document-link {
+      color: #1d4ed8;
+      text-decoration: underline;
+      font-weight: 700;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .original-functional-view {
+      min-height: 100%;
+      padding: 22px 16px 32px;
+      background: #ffffff;
+      color: #111827;
+      font-family: "Microsoft JhengHei", "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-functional-title {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-functional-section-title {
+      margin: 14px 0 8px;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .original-functional-view p {
+      margin: 0 0 2px;
+      color: #111827;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .original-functional-view strong {
+      font-weight: 700;
+    }
+
+    .original-functional-figure {
+      margin: 28px 0 22px;
+    }
+
+    .original-functional-figure .xml-use-image-wrap {
+      margin: 0;
+      padding: 0;
+      border: 2px solid #a8aeb8;
+      border-radius: 0;
+      background: #ffffff;
+    }
+
+    .original-functional-figure .xml-use-image-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .original-functional-view table {
+      width: 100%;
+      margin: 10px 0 28px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      color: #111827;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .original-functional-view th,
+    .original-functional-view td {
+      padding: 6px 8px;
+      border: 1px solid #8f8f8f;
+      background: #ffffff;
+      color: #111827;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .original-functional-view th {
+      font-weight: 700;
+    }
+
+    .original-functional-view th p,
+    .original-functional-view td p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .original-functional-view .placeholder {
+      margin: 12px 0 24px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
     @media (max-width: 960px) {
       .document-dialog {
         width: min(98vw, 760px);
@@ -360,6 +716,10 @@
 
       .document-compare-content {
         max-height: 62vh;
+      }
+
+      .original-step-row {
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -548,11 +908,135 @@
       font-weight: 700;
     }
 
+    .document-dialog-body .repair-inline-icon-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 6px;
+    }
+
+    .document-dialog-body .repair-inline-icon-row .xml-use-image-wrap {
+      flex: 0 0 auto;
+      width: 30px;
+      margin: 0;
+      padding: 3px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .document-dialog-body .repair-inline-icon-row .xml-use-image-wrap img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .document-dialog-body .repair-inline-icon-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .document-dialog-body .repair-inline-icon-text p {
+      margin: 0;
+    }
+
+    .document-dialog-body .repair-tech-info-block {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #38bdf8;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, .10);
+    }
+
+    .document-dialog-body .repair-tech-info-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: -10px -12px 10px;
+      padding: 6px 10px;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid rgba(56, 189, 248, .36);
+      background: rgba(56, 189, 248, .20);
+    }
+
+    .document-dialog-body .repair-tech-info-title-row .xml-use-image-wrap {
+      flex: 0 0 auto;
+      width: 26px;
+      margin: 0;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    .document-dialog-body .repair-tech-info-title-row .xml-use-image-wrap img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .document-dialog-body .repair-tech-info-title-text {
+      min-width: 0;
+      color: #e0f7ff;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .document-dialog-body .repair-tech-info-body p {
+      margin: 0 0 6px;
+    }
+    .document-dialog-body .repair-signal-row {
+      margin: -10px -12px 10px;
+      padding: 6px 10px;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(255, 255, 255, .16);
+      font-weight: 700;
+    }
+
+    .document-dialog-body .repair-hint.attention .repair-signal-row {
+      background: rgba(245, 158, 11, .22);
+      border-bottom-color: rgba(245, 158, 11, .38);
+    }
+
+    .document-dialog-body .repair-signal-row .xml-use-image-wrap {
+      width: 28px;
+      padding: 2px;
+      border-color: rgba(255, 255, 255, .28);
+    }
+
+    .document-dialog-body .repair-signal-row .repair-inline-icon-text {
+      font-size: 14px;
+      line-height: 1.35;
+      color: #eff7ff;
+    }
+
     .document-dialog-body .hotspot {
       color: #93c5fd;
       text-decoration: underline;
       cursor: help;
       font-weight: 600;
+    }
+    .document-dialog-body .repair-document-list {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .document-dialog-body .repair-document-link {
+      color: #93c5fd;
+      text-decoration: underline;
+      cursor: help;
+      font-weight: 600;
+      line-height: 1.55;
+      word-break: break-word;
     }
 
     .document-dialog-body .html-view tr.highlight-row>th,
@@ -2583,7 +3067,7 @@
       if (!documentDialog.open) documentDialog.showModal();
 
       loadDocumentXmlFromFolder(record, "original")
-        .then((xmlDoc) => renderDocumentPanelContent(panels.originalContent, xmlDoc))
+        .then((xmlDoc) => renderOriginalDocumentPanelContent(panels.originalContent, xmlDoc))
         .catch((error) => renderDocumentPanelError(panels.originalContent, error, titleText));
 
       loadDocumentXmlFromFolder(record, "converted")
@@ -2616,16 +3100,16 @@
 
       const layout = document.createElement("div");
       layout.className = "document-compare-layout";
-      const originalContent = createDocumentComparePanel(layout, "原始檔", "正在載入 Document XML...");
+      const originalContent = createDocumentComparePanel(layout, "原始檔", "正在載入 Document XML...", "original-document-panel");
       const convertedContent = createDocumentComparePanel(layout, "轉換後", "正在載入 Output/Document XML...");
       documentDialogBody.appendChild(layout);
       return { originalContent, convertedContent };
     }
 
     // 中文註解：建立單側文件面板；輸入為父層、標題與載入提示，輸出為可填入 XML 渲染結果的內容區。
-    function createDocumentComparePanel(parentElement, headingText, loadingText) {
+    function createDocumentComparePanel(parentElement, headingText, loadingText, extraPanelClass) {
       const panel = document.createElement("section");
-      panel.className = "document-compare-panel";
+      panel.className = extraPanelClass ? `document-compare-panel ${extraPanelClass}` : "document-compare-panel";
 
       const heading = document.createElement("h2");
       heading.className = "document-compare-heading";
@@ -2641,6 +3125,611 @@
     }
 
     // 中文註解：把 XML 轉成 viewer-style HTML 放入指定欄位；輸入是欄位 DOM 與 XML Document，輸出為畫面中的文件內容。
+    // 中文註解：把原始 Document XML 轉成左欄專用排版；輸入是欄位 DOM 與 XML Document，輸出為接近原廠文件的白底圖文版面。
+    function renderOriginalDocumentPanelContent(contentElement, xmlDoc) {
+      contentElement.innerHTML = "";
+      contentElement.appendChild(buildOriginalDocumentHtmlView(xmlDoc));
+    }
+
+    // 中文註解：建立原始檔專用 HTML；輸入 XML Document，依文件根格式分流到功能描述或維修手冊版型，其他格式回退既有 viewer-style。
+    function buildOriginalDocumentHtmlView(xmlDoc) {
+      const root = xmlDoc && xmlDoc.documentElement;
+      const functionalDescription = findFirstElementByLocalTag(root, "FUNCTIONALDESCRIPTION");
+      if (functionalDescription) return buildOriginalFunctionalDescriptionView(functionalDescription);
+
+      const repairDocument = findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT") || findFirstElementByLocalTag(root, "REPAIRMANUALDOCUMENT_MOD");
+      if (!repairDocument) return buildDocumentHtmlView(xmlDoc);
+      const processNodes = collectOriginalRepairProcesses(repairDocument);
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "original-document-view";
+      renderOriginalRepairDocument(repairDocument, processNodes, wrapper);
+      return wrapper;
+    }
+
+    // 中文註解：建立功能描述文件的左欄專用版型；輸入 FUNCTIONALDESCRIPTION，輸出標題、段落、圖片與索引表的白底文件排版。
+    function buildOriginalFunctionalDescriptionView(functionalDescription) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "original-functional-view";
+      renderOriginalFunctionalDescription(functionalDescription, wrapper);
+      return wrapper;
+    }
+
+    // 中文註解：依原始 XML 順序渲染功能描述；輸入 FUNCTIONALDESCRIPTION 與容器，輸出接近範例圖的章節內容。
+    function renderOriginalFunctionalDescription(functionalDescription, container) {
+      const documentTitle = getFirstChildText(functionalDescription, "DOCUMENTTITLE") || getFirstDescendantTextByLocalTag(functionalDescription, "HEADING") || "功能描述";
+      const titleElement = document.createElement("h1");
+      titleElement.className = "original-functional-title";
+      titleElement.textContent = documentTitle;
+      container.appendChild(titleElement);
+
+      functionalDescription.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "DOCUMENTTITLE" || tag === "HEADING") return;
+        renderOriginalFunctionalNode(child, container, { documentTitle });
+      });
+    }
+
+    // 中文註解：渲染功能描述各層節點；輸入 XML 節點、容器與目前標題，輸出段落、章節標題、圖片與表格。
+    function renderOriginalFunctionalNode(node, container, context) {
+      if (node.nodeType === Node.TEXT_NODE) return;
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      switch (tag) {
+        case "FUNCDESCINTRODUCTORY":
+        case "SUBSECTION2":
+        case "CHAPTER":
+          node.childNodes.forEach((child) => renderOriginalFunctionalNode(child, container, context));
+          break;
+        case "HEADING":
+          renderOriginalFunctionalHeading(node, container, context);
+          break;
+        case "PARAGRAPH":
+          renderOriginalFunctionalParagraph(node, container);
+          break;
+        case "GRAPHIC":
+          renderOriginalFunctionalGraphic(node, container);
+          break;
+        case "TABLE":
+          renderDocumentTable(node, container);
+          break;
+        default:
+          node.childNodes.forEach((child) => renderOriginalFunctionalNode(child, container, context));
+          break;
+      }
+    }
+
+    // 中文註解：渲染功能描述章節標題；輸入 HEADING，輸出 h2，並跳過與文件標題相同的重複標題。
+    function renderOriginalFunctionalHeading(headingNode, container, context) {
+      const headingText = headingNode.textContent.trim();
+      if (!headingText || headingText === (context && context.documentTitle)) return;
+      const headingElement = document.createElement("h2");
+      headingElement.className = "original-functional-section-title";
+      headingElement.textContent = headingText;
+      container.appendChild(headingElement);
+    }
+
+    // 中文註解：渲染功能描述段落；輸入 PARAGRAPH，輸出保留強調文字與圖片編號的 p，空白段落只當作視覺間距略過。
+    function renderOriginalFunctionalParagraph(paragraphNode, container) {
+      if (!paragraphNode.textContent.replace(/\s+/g, "").trim()) return;
+      const paragraph = document.createElement("p");
+      renderOriginalInlineChildren(paragraphNode, paragraph);
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：渲染功能描述圖片；輸入 GRAPHIC，輸出單欄大圖 figure，圖片來源沿用既有 XmlUse 對應邏輯。
+    function renderOriginalFunctionalGraphic(graphicNode, container) {
+      const figure = document.createElement("figure");
+      figure.className = "original-functional-figure";
+      figure.appendChild(renderXmlUseGraphic(graphicNode));
+      container.appendChild(figure);
+    }
+
+    // 中文註解：深度取得第一個指定 local tag 的文字；輸入根節點與 tag，輸出 trim 後文字，供功能描述缺標題時備援。
+    function getFirstDescendantTextByLocalTag(node, targetTagName) {
+      const found = findFirstElementByLocalTag(node, targetTagName);
+      return found ? found.textContent.trim() : "";
+    }
+
+    // 中文註解：渲染原始維修文件外框；輸入維修文件節點與流程清單，只輸出 XML 實際提供的標題、提示與流程內容。
+    function renderOriginalRepairDocument(repairDocument, processNodes, container) {
+      const titleText = getFirstChildText(repairDocument, "TITLE") || "維修流程";
+      const awNumberText = formatOriginalAwNumber(repairDocument.getAttribute("AWNUMBER") || "");
+      const titleElement = document.createElement("h1");
+      titleElement.className = "original-document-title";
+      titleElement.textContent = awNumberText ? `${awNumberText} | ${titleText}` : titleText;
+      container.appendChild(titleElement);
+
+      renderOriginalRepairMoreInfo(repairDocument, container);
+      renderOriginalRepairHints(repairDocument, container);
+      renderOriginalRepairDocumentFallbackChildren(repairDocument, container);
+
+      processNodes.forEach((processNode, processIndex) => renderOriginalRepairProcess(processNode, container, processIndex + 1));
+    }
+
+    // 中文註解：補上維修文件根層尚未被專用版型處理的內容；輸入 REPAIRMANUALDOCUMENT，輸出 INCLUDE_*、表格或其他文字節點。
+    function renderOriginalRepairDocumentFallbackChildren(repairDocument, container) {
+      const handledTags = new Set(["TITLE", "DOCUMENTLIST", "HINTS", "PREPROCESSES", "KEYPROCESS", "POSTPROCESSES"]);
+      repairDocument.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+
+    // 中文註解：渲染維修文件上方的更多資訊提示；輸入維修文件節點，若有直接 DOCUMENTLIST 就輸出藍色底線提示。
+    function renderOriginalRepairMoreInfo(repairDocument, container) {
+      const documentList = getFirstChildElement(repairDocument, "DOCUMENTLIST");
+      const hotspots = documentList ? findDescendantElementsByLocalTags(documentList, ["HOTSPOT"]) : [];
+      if (hotspots.length === 0) return;
+
+      container.appendChild(renderOriginalDocumentList(documentList));
+    }
+
+    // 中文註解：渲染維修文件 HINTS 上方資訊；輸入維修文件節點，輸出警告與有損壞危險區塊。
+    function renderOriginalRepairHints(repairDocument, container) {
+      const hintsNode = getLocalTagName(repairDocument) === "HINTS" ? repairDocument : getFirstChildElement(repairDocument, "HINTS");
+      if (!hintsNode) return;
+
+      const hintEntries = collectOriginalRepairHintEntries(hintsNode);
+      if (hintEntries.length === 0) return;
+      const hintsWrap = document.createElement("div");
+      hintsWrap.className = "original-repair-hints";
+      hintEntries.forEach((hintNode) => renderOriginalRepairHintBox(hintNode, hintsWrap));
+      container.appendChild(hintsWrap);
+    }
+
+    // 中文註解：收集 HINTS 裡可顯示的提示節點；輸入 HINTS，輸出 WARNING/DAMAGE/HINT/TECH_INFO，避免 INCLUDE_* 包住的內容被漏掉。
+    function collectOriginalRepairHintEntries(hintsNode) {
+      const hintEntries = [];
+      collectOriginalHintEntryNodes(hintsNode, hintEntries);
+      const hintOrder = { WARNING: 0, DAMAGE: 1, HINT: 2, TECH_INFO: 3 };
+      return hintEntries.sort((left, right) => (hintOrder[getLocalTagName(left)] ?? 9) - (hintOrder[getLocalTagName(right)] ?? 9));
+    }
+
+    // 中文註解：遞迴收集提示節點；輸入任意 HINTS/INCLUDE_* 容器，輸出真正可讀的提示內容節點。
+    function collectOriginalHintEntryNodes(parentNode, hintEntries) {
+      if (!parentNode) return;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "WARNING" || tag === "DAMAGE" || tag === "HINT" || tag === "TECH_INFO") {
+          hintEntries.push(child);
+          return;
+        }
+        if (tag.startsWith("INCLUDE_") || tag === "HINTS") collectOriginalHintEntryNodes(child, hintEntries);
+      });
+    }
+
+    // 中文註解：渲染單一警示卡片；輸入 WARNING/DAMAGE/HINT，輸出含標題列、重點文字、條列與文件連結的區塊。
+    function renderOriginalRepairHintBox(hintNode, container) {
+      const hintTag = getLocalTagName(hintNode);
+      const box = document.createElement("section");
+      box.className = `original-hint-box ${hintTag === "WARNING" ? "warning" : hintTag === "TECH_INFO" ? "info" : "damage"}`;
+
+      const header = document.createElement("div");
+      header.className = "original-hint-header";
+      const icon = document.createElement("span");
+      icon.className = "original-hint-icon";
+      icon.textContent = hintTag === "WARNING" ? "!" : "i";
+      const signal = document.createElement("span");
+      signal.textContent = getFirstChildText(hintNode, "SIGNALWORD") || (hintTag === "WARNING" ? "警告" : hintTag === "TECH_INFO" ? "技術性附加資訊" : "有损坏危险");
+      header.appendChild(icon);
+      header.appendChild(signal);
+      box.appendChild(header);
+
+      const body = document.createElement("div");
+      body.className = "original-hint-body";
+      appendOriginalHintParagraph(hintNode, body, "TYPE_OF_DANGER", "original-hint-main");
+      appendOriginalHintParagraph(hintNode, body, "CONSEQUENCES", "original-hint-detail");
+      appendOriginalHintInformations(hintNode, body);
+      appendOriginalHintProtections(hintNode, body);
+      appendOriginalHintDocumentLinks(hintNode, body);
+      appendOriginalHintFallbackChildren(hintNode, body);
+      box.appendChild(body);
+      container.appendChild(box);
+    }
+
+    // 中文註解：渲染提示中的主旨段落；輸入提示節點與子節點名稱，輸出加粗段落。
+    function appendOriginalHintParagraph(hintNode, container, childTagName, className) {
+      const childNode = getFirstChildElement(hintNode, childTagName);
+      const text = getOriginalHintTextWithoutDocumentList(childNode);
+      if (!text) return;
+      const paragraph = document.createElement("p");
+      paragraph.className = className;
+      paragraph.textContent = text;
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：渲染提示中的防護事項；輸入提示節點，輸出條列清單，避免 DOCUMENTLIST 文字混入條列。
+    // 中文註解：渲染提示中的 INFORMATION；輸入提示節點，輸出每個資訊段落，補足 TECH_INFO 等非警告類內容。
+    function appendOriginalHintInformations(hintNode, container) {
+      findDirectChildElementsByLocalTag(hintNode, "INFORMATION").forEach((informationNode) => {
+        renderOriginalGenericNode(informationNode, container, { skipTags: ["DOCUMENTLIST"] });
+      });
+    }
+    function appendOriginalHintProtections(hintNode, container) {
+      const protectionNodes = findDirectChildElementsByLocalTag(hintNode, "PROTECTION");
+      const protectionTexts = protectionNodes.map((node) => getOriginalHintTextWithoutDocumentList(node)).filter(Boolean);
+      if (protectionTexts.length === 0) return;
+      const list = document.createElement("ul");
+      list.className = "original-hint-list";
+      protectionTexts.forEach((text) => {
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+    }
+
+    // 中文註解：渲染提示中的文件連結；輸入提示節點，輸出 AWNUMBER + TITLE 的藍色底線文字。
+    // 中文註解：渲染提示中尚未被專用分支處理的子節點；輸入提示節點，輸出可讀文字、圖片或文件連結的 fallback。
+    function appendOriginalHintFallbackChildren(hintNode, container) {
+      const handledTags = new Set(["GRAPHIC", "SIGNALWORD", "TYPE_OF_DANGER", "CONSEQUENCES", "PROTECTION", "INFORMATION", "DOCUMENTLIST"]);
+      hintNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+    function appendOriginalHintDocumentLinks(hintNode, container) {
+      const documentLists = findDescendantElementsByLocalTags(hintNode, ["DOCUMENTLIST"]);
+      const hotspots = [];
+      documentLists.forEach((documentList) => {
+        findDescendantElementsByLocalTags(documentList, ["HOTSPOT"]).forEach((hotspot) => hotspots.push(hotspot));
+      });
+      if (hotspots.length === 0) return;
+
+      const linksWrap = document.createElement("div");
+      linksWrap.className = "original-hint-links";
+      hotspots.forEach((hotspot) => {
+        const link = document.createElement("a");
+        link.href = "javascript:void(0)";
+        const awNumber = getFirstChildText(hotspot, "AWNUMBER");
+        const title = getFirstChildText(hotspot, "TITLE");
+        link.textContent = [awNumber, title].filter(Boolean).join("　");
+        linksWrap.appendChild(link);
+      });
+      container.appendChild(linksWrap);
+    }
+
+    // 中文註解：取出提示文字但排除 DOCUMENTLIST；輸入提示子節點，輸出不含文件連結標題的純文字。
+    function getOriginalHintTextWithoutDocumentList(node) {
+      if (!node) return "";
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\s+/g, " ").trim();
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+      if (getLocalTagName(node) === "DOCUMENTLIST" || getLocalTagName(node) === "GRAPHIC") return "";
+      return Array.from(node.childNodes).map((child) => getOriginalHintTextWithoutDocumentList(child)).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    }
+    // 中文註解：通用渲染未知 XML 節點；輸入任意原始 XML 節點，輸出可讀文字、圖片、表格或文件連結，避免左側漏內容。
+    function renderOriginalGenericNode(node, container, options) {
+      if (!node) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.replace(/\s+/g, " ").trim();
+        if (text) appendOriginalGenericParagraph(container, text);
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = getLocalTagName(node);
+      const skipTags = new Set((options && options.skipTags) || []);
+      if (skipTags.has(tag)) return;
+      switch (tag) {
+        case "GRAPHIC":
+          container.appendChild(renderXmlUseGraphic(node));
+          return;
+        case "TABLE":
+          renderDocumentTable(node, container);
+          return;
+        case "DOCUMENTLIST":
+          container.appendChild(renderOriginalDocumentList(node));
+          return;
+        case "HOTSPOT":
+          container.appendChild(renderOriginalDocumentLink(node));
+          return;
+        case "HINTS":
+          renderOriginalRepairHints(node, container);
+          return;
+        case "WARNING":
+        case "DAMAGE":
+        case "HINT":
+        case "TECH_INFO":
+          renderOriginalRepairHintBox(node, container);
+          return;
+        case "PARAGRAPH":
+        case "SIMPLE_TEXTFRAGMENT":
+        case "TEXTFRAGMENT":
+        case "LISTENTRY":
+        case "LISTELEMENT":
+        case "CONNECTION":
+        case "DIMENSION":
+        case "DESCRIPTION":
+        case "PROPERTY":
+        case "VALUE":
+        case "UNIT":
+        case "PART":
+        case "UPI":
+          appendOriginalGenericInlineNode(node, container);
+          return;
+        case "LIST":
+        case "GENERALLIST":
+          container.appendChild(renderOriginalGenericList(node));
+          return;
+        case "TITLE":
+        case "SIGNALWORD":
+          appendOriginalGenericTitle(container, node.textContent.trim());
+          return;
+        default:
+          renderOriginalGenericChildren(node, container, options);
+          return;
+      }
+    }
+
+    // 中文註解：渲染未知節點的子節點；輸入容器節點與輸出容器，會依 XML 順序遞迴顯示可讀內容。
+    function renderOriginalGenericChildren(parentNode, container, options) {
+      parentNode.childNodes.forEach((child) => renderOriginalGenericNode(child, container, options));
+    }
+
+    // 中文註解：把 inline 型 XML 節點轉成段落；輸入文字片段節點，輸出保留強調與圖片編號的 p。
+    function appendOriginalGenericInlineNode(node, container) {
+      if (!node.textContent.replace(/\s+/g, "").trim()) return;
+      const paragraph = document.createElement("p");
+      renderOriginalInlineChildren(node, paragraph);
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：加入通用段落；輸入容器與純文字，輸出單一 p，避免文字節點散落在畫面上。
+    function appendOriginalGenericParagraph(container, text) {
+      if (!text) return;
+      const paragraph = document.createElement("p");
+      paragraph.textContent = text;
+      container.appendChild(paragraph);
+    }
+
+    // 中文註解：加入通用小標；輸入容器與標題文字，輸出簡單粗體標題。
+    function appendOriginalGenericTitle(container, text) {
+      if (!text) return;
+      const title = document.createElement("div");
+      title.className = "original-generic-title";
+      title.textContent = text;
+      container.appendChild(title);
+    }
+
+    // 中文註解：渲染原始文件連結清單；輸入 DOCUMENTLIST，輸出每個 HOTSPOT 的 block 連結。
+    function renderOriginalDocumentList(documentListNode) {
+      const links = document.createElement("div");
+      links.className = "original-document-links";
+      const hotspots = findDescendantElementsByLocalTags(documentListNode, ["HOTSPOT"]);
+      hotspots.forEach((hotspot) => links.appendChild(renderOriginalDocumentLink(hotspot)));
+      if (links.children.length === 0 && documentListNode.textContent.trim()) appendOriginalGenericParagraph(links, documentListNode.textContent.trim());
+      return links;
+    }
+
+    // 中文註解：渲染單一原始文件連結；輸入 HOTSPOT，輸出 div，避免文件清單擠成同一行。
+    function renderOriginalDocumentLink(hotspotNode) {
+      const link = document.createElement("div");
+      link.className = "original-document-link";
+      const awNumber = getFirstChildText(hotspotNode, "AWNUMBER");
+      const title = getFirstChildText(hotspotNode, "TITLE");
+      link.textContent = [awNumber, title].filter(Boolean).join(" ") || hotspotNode.textContent.trim();
+      const linkId = hotspotNode.getAttribute("LINKID") || "";
+      if (linkId) link.setAttribute("title", `HOTSPOT: ${linkId}`);
+      return link;
+    }
+
+    // 中文註解：渲染通用清單；輸入 LIST/GENERALLIST，輸出 ul，未知清單內容也會保留下來。
+    function renderOriginalGenericList(listNode) {
+      const list = document.createElement("ul");
+      list.className = "original-hint-list";
+      listNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const item = document.createElement("li");
+        renderOriginalGenericNode(child, item);
+        if (!item.textContent.trim()) item.textContent = child.textContent.replace(/\s+/g, " ").trim();
+        if (item.textContent.trim()) list.appendChild(item);
+      });
+      return list;
+    }
+    // 中文註解：將 AWNUMBER 轉成畫面標題用的分段格式；輸入例如 3540001，輸出 35 40 001。
+    function formatOriginalAwNumber(awNumber) {
+      const cleanValue = String(awNumber || "").trim();
+      if (/^\d{7}$/.test(cleanValue)) return `${cleanValue.slice(0, 2)} ${cleanValue.slice(2, 4)} ${cleanValue.slice(4)}`;
+      return cleanValue;
+    }
+
+    // 中文註解：收集原始維修文件的完整流程；輸入 REPAIRMANUALDOCUMENT，依序輸出前置、核心、後置 PROCESS，避免漏掉 PREPROCESSES。
+    function collectOriginalRepairProcesses(repairDocument) {
+      const processNodes = [];
+      ["PREPROCESSES", "KEYPROCESS", "POSTPROCESSES"].forEach((sectionTagName) => {
+        const sectionNode = getFirstChildElement(repairDocument, sectionTagName);
+        if (!sectionNode) return;
+        collectOriginalProcessNodes(sectionNode, processNodes);
+      });
+      return processNodes;
+    }
+
+    // 中文註解：遞迴收集流程節點；輸入流程容器與輸出陣列，會穿透 INCLUDE_PROCESS 但保留每個 PROCESS 自成章節。
+    function collectOriginalProcessNodes(parentNode, processNodes) {
+      if (!parentNode) return;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "PROCESS") {
+          processNodes.push(child);
+          collectOriginalProcessNodes(child, processNodes);
+          return;
+        }
+        if (tag === "INCLUDE_PROCESS" || tag === "PREPROCESSES" || tag === "KEYPROCESS" || tag === "POSTPROCESSES" || tag === "STEPS") {
+          collectOriginalProcessNodes(child, processNodes);
+        }
+      });
+    }
+
+    // 中文註解：渲染單一維修流程；輸入 PROCESS 與流程序號，輸出流程標題、流程提示與每個操作步驟的圖文列。
+    function renderOriginalRepairProcess(processNode, container, processIndex) {
+      const processSection = document.createElement("section");
+      processSection.className = "original-process";
+
+      const processTitle = document.createElement("h3");
+      processTitle.className = "original-process-title";
+      processTitle.textContent = `${processIndex}-${getFirstChildText(processNode, "TITLE") || "未命名流程"}`;
+      processSection.appendChild(processTitle);
+      renderOriginalRepairHints(processNode, processSection);
+
+      const stepsNode = getFirstChildElement(processNode, "STEPS");
+      const stepNodes = stepsNode ? collectOriginalStepNodes(stepsNode) : [];
+      stepNodes.forEach((stepNode) => renderOriginalRepairStep(stepNode, processSection));
+      renderOriginalProcessFallbackChildren(processNode, processSection);
+      container.appendChild(processSection);
+    }
+
+    // 中文註解：補上流程層未被專用版型處理的內容；輸入 PROCESS，輸出 PARTS/DOCUMENTLIST/ADDITIONALDATA 等可讀節點。
+    function renderOriginalProcessFallbackChildren(processNode, container) {
+      const handledTags = new Set(["TITLE", "HINTS", "STEPS"]);
+      processNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        renderOriginalGenericNode(child, container);
+      });
+    }
+
+    // 中文註解：收集流程中的操作步驟；輸入 STEPS，輸出 OPERATINGSTEP，會深入 CHECKSTEP 但跳過巢狀 INCLUDE_PROCESS 以免重複顯示。
+    function collectOriginalStepNodes(parentNode) {
+      const stepNodes = [];
+      if (!parentNode) return stepNodes;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "OPERATINGSTEP") {
+          stepNodes.push(child);
+          return;
+        }
+        if (tag === "INCLUDE_PROCESS" || tag === "PROCESS") return;
+        collectOriginalStepNodes(child).forEach((stepNode) => stepNodes.push(stepNode));
+      });
+      return stepNodes;
+    }
+
+    // 中文註解：渲染原始檔的單一步驟；輸入 OPERATINGSTEP，輸出左側圖片、右側條列說明的同列版面。
+    function renderOriginalRepairStep(stepNode, container) {
+      const row = document.createElement("div");
+      row.className = "original-step-row";
+      const graphicNodes = findDirectChildElementsByLocalTag(stepNode, "GRAPHIC");
+      if (graphicNodes.length === 0) row.classList.add("original-step-row-no-graphic");
+
+      if (graphicNodes.length > 0) {
+        const graphicsColumn = document.createElement("div");
+        graphicsColumn.className = "original-step-graphics";
+        graphicNodes.forEach((graphicNode) => graphicsColumn.appendChild(renderXmlUseGraphic(graphicNode)));
+        row.appendChild(graphicsColumn);
+      }
+
+      const textColumn = document.createElement("div");
+      textColumn.className = "original-step-text";
+      const instructionNodes = findDirectChildElementsByLocalTag(stepNode, "INSTRUCTION");
+      const list = document.createElement("ul");
+      instructionNodes.forEach((instructionNode) => appendOriginalInstructionItems(instructionNode, list));
+      appendOriginalStepFallbackItems(stepNode, list);
+      if (list.children.length === 0 && stepNode.textContent.trim()) {
+        const item = document.createElement("li");
+        item.textContent = stepNode.textContent.replace(/\s+/g, " ").trim();
+        list.appendChild(item);
+      }
+      textColumn.appendChild(list);
+      row.appendChild(textColumn);
+      container.appendChild(row);
+    }
+
+    // 中文註解：補上步驟中非圖片、非 INSTRUCTION 的直接內容；輸入 OPERATINGSTEP，輸出額外資料、提示或文件連結條列。
+    function appendOriginalStepFallbackItems(stepNode, listElement) {
+      const handledTags = new Set(["GRAPHIC", "INSTRUCTION"]);
+      stepNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE || handledTags.has(getLocalTagName(child))) return;
+        appendOriginalInstructionChildItem(child, listElement);
+      });
+    }
+
+    // 中文註解：把 INSTRUCTION 內所有可讀內容轉成條列；輸入 instruction 節點，輸出段落、提示、文件連結與其他 fallback 內容。
+    function appendOriginalInstructionItems(instructionNode, listElement) {
+      instructionNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          appendOriginalInstructionChildItem(child, listElement);
+          return;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "TEXTFRAGMENT") {
+          child.childNodes.forEach((fragmentChild) => appendOriginalInstructionChildItem(fragmentChild, listElement));
+          return;
+        }
+        appendOriginalInstructionChildItem(child, listElement);
+      });
+    }
+
+    // 中文註解：渲染單一 INSTRUCTION 子節點；輸入任意子節點，輸出一個 li，避免未知標籤被忽略。
+    function appendOriginalInstructionChildItem(childNode, listElement) {
+      if (childNode.nodeType === Node.TEXT_NODE) {
+        const text = childNode.textContent.replace(/\s+/g, " ").trim();
+        if (!text) return;
+        const item = document.createElement("li");
+        item.textContent = text;
+        listElement.appendChild(item);
+        return;
+      }
+      if (childNode.nodeType !== Node.ELEMENT_NODE) return;
+      const item = document.createElement("li");
+      renderOriginalGenericNode(childNode, item);
+      if (item.textContent.trim() || item.children.length > 0) listElement.appendChild(item);
+    }
+
+    // 中文註解：遞迴渲染原始檔段落內文；輸入 XML inline 節點，輸出文字、圖片編號與強調文字。
+    function renderOriginalInlineChildren(node, container) {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          container.appendChild(document.createTextNode(child.textContent.replace(/\s+/g, " ")));
+          return;
+        }
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = getLocalTagName(child);
+        if (tag === "IMAGENUMBER" || tag === "HOTSPOT") {
+          const span = document.createElement("span");
+          span.className = tag === "IMAGENUMBER" ? "original-image-number" : "hotspot";
+          span.textContent = child.textContent.trim();
+          container.appendChild(span);
+          return;
+        }
+        if (tag === "EMPHASIZE" || tag === "EMPHASIZE1" || tag === "EMPHASIZE2" || tag === "EMPHASIZE3") {
+          const strong = document.createElement("strong");
+          renderOriginalInlineChildren(child, strong);
+          container.appendChild(strong);
+          return;
+        }
+        renderOriginalInlineChildren(child, container);
+      });
+    }
+
+    // 中文註解：尋找直接子層指定 local tag；輸入父節點與 tag，輸出符合條件的 Element 陣列。
+    function findDirectChildElementsByLocalTag(parentNode, childTagName) {
+      const matches = [];
+      const target = String(childTagName || "").toUpperCase();
+      if (!parentNode) return matches;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === target) matches.push(child);
+      });
+      return matches;
+    }
+
+    // 中文註解：深度收集指定 local tags；輸入根節點與 tag 清單，輸出用於原始檔條列文字的節點陣列。
+    function findDescendantElementsByLocalTags(parentNode, tagNames) {
+      const matches = [];
+      const targets = new Set((tagNames || []).map((tagName) => String(tagName).toUpperCase()));
+      if (!parentNode) return matches;
+      parentNode.childNodes.forEach((child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return;
+        if (targets.has(getLocalTagName(child))) matches.push(child);
+        findDescendantElementsByLocalTags(child, tagNames).forEach((match) => matches.push(match));
+      });
+      return matches;
+    }
     function renderDocumentPanelContent(contentElement, xmlDoc) {
       contentElement.innerHTML = "";
       contentElement.appendChild(buildDocumentHtmlView(xmlDoc));
@@ -2833,6 +3922,7 @@
         case "INCLUDE_HINT":
         case "INCLUDE_WARNING":
         case "INCLUDE_DAMAGE":
+        case "INCLUDE_TECH_INFO":
           renderDocumentChildren(node, container, renderRepairNode, currentContext);
           break;
         case "OPERATINGSTEP":
@@ -2850,6 +3940,9 @@
         case "HINT":
           renderRepairHint(node, container, currentContext);
           break;
+        case "TECH_INFO":
+          renderRepairTechInfoBlock(node, container, currentContext);
+          break;
         case "GRAPHIC":
           container.appendChild(renderXmlUseGraphic(node));
           break;
@@ -2862,6 +3955,9 @@
         }
         case "HOTSPOT":
           container.appendChild(renderHotspot(node));
+          break;
+        case "DOCUMENTLIST":
+          container.appendChild(renderRepairDocumentList(node));
           break;
         case "TITLE":
           if (node.textContent.trim()) {
@@ -2883,12 +3979,9 @@
         case "TYPE_OF_DANGER":
         case "CONSEQUENCES":
         case "PROTECTION":
-        case "INFORMATION": {
-          const block = document.createElement("p");
-          renderDocumentChildren(node, block, renderRepairNode, currentContext);
-          container.appendChild(block);
+        case "INFORMATION":
+          renderRepairHintContentBlock(node, container, currentContext);
           break;
-        }
         case "EMPHASIZE":
         case "EMPHASIZE1":
         case "EMPHASIZE2":
@@ -2996,12 +4089,8 @@
       stepDiv.className = "repair-step";
       const stepTitle = document.createElement("div");
       stepTitle.className = "repair-step-title";
-      const stepIndexElement = document.createElement("span");
-      stepIndexElement.className = "repair-step-index";
-      stepIndexElement.textContent = String(context.stepIndex || 0);
       const stepText = document.createElement("span");
-      stepText.textContent = "操作步驟";
-      stepTitle.appendChild(stepIndexElement);
+      stepText.textContent = `步驟 ${context.stepIndex || 0} : `;
       stepTitle.appendChild(stepText);
       stepDiv.appendChild(stepTitle);
       stepNode.childNodes.forEach((child) => renderRepairNode(child, stepDiv, context));
@@ -3009,6 +4098,58 @@
     }
 
     // 中文註解：渲染 WARNING/DAMAGE/HINT；輸入提示節點，輸出帶左側色條的提示區塊。
+    // 中文註解：渲染提示內文；輸入 TYPE_OF_DANGER/PROTECTION 等節點，有直接 GRAPHIC 時輸出左側 icon、右側文字，否則維持一般段落。
+    // 中文註解：渲染技術性附加資訊；輸入 TECH_INFO 節點，輸出以 GRAPHIC 作為 SIGNALWORD 前置 icon 的資訊區塊。
+    function renderRepairTechInfoBlock(techInfoNode, container, context) {
+      const block = document.createElement("div");
+      block.className = "repair-tech-info-block";
+
+      const signalWord = getFirstChildText(techInfoNode, "SIGNALWORD");
+      const graphicNodes = findDirectChildElementsByLocalTag(techInfoNode, "GRAPHIC");
+      if (signalWord || graphicNodes.length > 0) {
+        const titleRow = document.createElement("div");
+        titleRow.className = "repair-tech-info-title-row";
+        if (graphicNodes.length > 0) titleRow.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+        if (signalWord) {
+          const titleText = document.createElement("div");
+          titleText.className = "repair-tech-info-title-text";
+          titleText.textContent = signalWord;
+          titleRow.appendChild(titleText);
+        }
+        block.appendChild(titleRow);
+      }
+
+      const body = document.createElement("div");
+      body.className = "repair-tech-info-body";
+      techInfoNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && ["GRAPHIC", "SIGNALWORD"].includes(getLocalTagName(child))) return;
+        renderRepairNode(child, body, context);
+      });
+      if (body.textContent.trim() || body.children.length > 0) block.appendChild(body);
+      container.appendChild(block);
+    }
+    function renderRepairHintContentBlock(contentNode, container, context) {
+      const graphicNodes = findDirectChildElementsByLocalTag(contentNode, "GRAPHIC");
+      if (graphicNodes.length === 0) {
+        const block = document.createElement("p");
+        renderDocumentChildren(contentNode, block, renderRepairNode, context);
+        container.appendChild(block);
+        return;
+      }
+
+      const row = document.createElement("div");
+      row.className = "repair-inline-icon-row";
+      row.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+
+      const textWrap = document.createElement("div");
+      textWrap.className = "repair-inline-icon-text";
+      contentNode.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && getLocalTagName(child) === "GRAPHIC") return;
+        renderRepairNode(child, textWrap, context);
+      });
+      row.appendChild(textWrap);
+      container.appendChild(row);
+    }
     function renderRepairHint(hintNode, container, context) {
       const hintDiv = document.createElement("div");
       hintDiv.className = "repair-hint";
@@ -3016,10 +4157,24 @@
       const tag = getLocalTagName(hintNode);
       if (tag === "DAMAGE" || /警告|危險|危险|注意|損壞|损坏/i.test(signalWord)) hintDiv.classList.add("attention");
       if (signalWord) {
-        const titleElement = document.createElement("div");
-        titleElement.className = "repair-hint-title";
-        titleElement.textContent = signalWord;
-        hintDiv.appendChild(titleElement);
+        const graphicNodes = findDirectChildElementsByLocalTag(hintNode, "GRAPHIC");
+        if (graphicNodes.length > 0) {
+          const signalRow = document.createElement("div");
+          signalRow.className = "repair-inline-icon-row repair-signal-row";
+          signalRow.appendChild(renderXmlUseGraphic(graphicNodes[0]));
+          const signalText = document.createElement("div");
+          signalText.className = "repair-inline-icon-text";
+          const signalParagraph = document.createElement("p");
+          signalParagraph.textContent = signalWord;
+          signalText.appendChild(signalParagraph);
+          signalRow.appendChild(signalText);
+          hintDiv.appendChild(signalRow);
+        } else {
+          const titleElement = document.createElement("div");
+          titleElement.className = "repair-hint-title";
+          titleElement.textContent = signalWord;
+          hintDiv.appendChild(titleElement);
+        }
       }
       hintNode.childNodes.forEach((child) => {
         if (child.nodeType !== Node.ELEMENT_NODE) return;
@@ -3031,6 +4186,24 @@
     }
 
     // 中文註解：渲染 HOTSPOT；輸入 HOTSPOT 節點，輸出保留 LINKID title 的 inline span。
+    // 中文註解：渲染右側文件清單；輸入 DOCUMENTLIST，輸出 div 清單，讓 HOTSPOT 項目自動換行而不是 inline span。
+    function renderRepairDocumentList(documentListNode) {
+      const list = document.createElement("div");
+      list.className = "repair-document-list";
+      const hotspotNodes = findDescendantElementsByLocalTags(documentListNode, ["HOTSPOT"]);
+      hotspotNodes.forEach((hotspotNode) => {
+        const item = document.createElement("div");
+        item.className = "repair-document-link";
+        const awNumber = getFirstChildText(hotspotNode, "AWNUMBER");
+        const title = getFirstChildText(hotspotNode, "TITLE");
+        item.textContent = [awNumber, title].filter(Boolean).join(" ") || hotspotNode.textContent.trim();
+        const linkId = hotspotNode.getAttribute("LINKID") || "";
+        if (linkId) item.setAttribute("title", `HOTSPOT: ${linkId}`);
+        list.appendChild(item);
+      });
+      if (list.children.length === 0) list.textContent = documentListNode.textContent.trim();
+      return list;
+    }
     function renderHotspot(node) {
       const span = document.createElement("span");
       span.className = "hotspot";
@@ -3904,3 +5077,10 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
