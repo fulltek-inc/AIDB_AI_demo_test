@@ -1942,6 +1942,7 @@
       componentRequirePlugImageAndDocument: false,
       componentListScrollTop: 0,
       componentSearchTimer: null,
+      componentSearchComposing: false,
       filteredData: {
         ProjectList: [],
         PictureList_site: [],
@@ -4803,32 +4804,58 @@
       }
     }
 
-    // 中文註解：處理第 5 分頁左側關鍵字搜尋；debounce 後重繪，並在下一幀安全還原焦點與游標。
+    // 中文註解：排程第 5 分頁左側關鍵字搜尋重繪；輸入為游標位置與延遲時間，輸出是更新後畫面並還原搜尋框焦點。
+    function scheduleComponentSearchRender(cursorStart, cursorEnd, delayMs = 120) {
+      if (appState.componentSearchTimer) {
+        clearTimeout(appState.componentSearchTimer);
+      }
+
+      appState.componentSearchTimer = setTimeout(() => {
+        appState.componentSearchTimer = null;
+        renderComponentCompareTab();
+        requestAnimationFrame(() => {
+          const searchInput = document.getElementById("componentSearchInput");
+          if (!searchInput) return;
+          searchInput.focus();
+          if (typeof cursorStart === "number" && typeof cursorEnd === "number") {
+            searchInput.setSelectionRange(cursorStart, cursorEnd);
+          }
+        });
+      }, delayMs);
+    }
+
+    // 中文註解：同步搜尋框文字到狀態；輸入是搜尋框元素，輸出是 appState 的搜尋字與清單捲動位置更新。
+    function updateComponentSearchKeyword(searchInput) {
+      appState.componentSearchKeyword = searchInput.value;
+      appState.componentListScrollTop = 0;
+      closePinDrawer();
+    }
+
+    // 中文註解：處理第 5 分頁左側關鍵字搜尋；中文輸入法組字期間只同步文字，不重繪 DOM，避免候選字與游標被打斷。
     function handleTableInput(event) {
       if (event.target.id === "componentSearchInput") {
-        const cursorStart = event.target.selectionStart;
-        const cursorEnd = event.target.selectionEnd;
-        appState.componentSearchKeyword = event.target.value;
-        appState.componentListScrollTop = 0;
-        closePinDrawer();
-
-        if (appState.componentSearchTimer) {
-          clearTimeout(appState.componentSearchTimer);
-        }
-
-        appState.componentSearchTimer = setTimeout(() => {
-          appState.componentSearchTimer = null;
-          renderComponentCompareTab();
-          requestAnimationFrame(() => {
-            const searchInput = document.getElementById("componentSearchInput");
-            if (!searchInput) return;
-            searchInput.focus();
-            if (typeof cursorStart === "number" && typeof cursorEnd === "number") {
-              searchInput.setSelectionRange(cursorStart, cursorEnd);
-            }
-          });
-        }, 120);
+        updateComponentSearchKeyword(event.target);
+        if (appState.componentSearchComposing || event.isComposing) return;
+        scheduleComponentSearchRender(event.target.selectionStart, event.target.selectionEnd);
       }
+    }
+
+    // 中文註解：標記搜尋框正在進行 IME 組字；輸入為 compositionstart 事件，輸出是暫停即時重繪的狀態。
+    function handleTableCompositionStart(event) {
+      if (event.target.id !== "componentSearchInput") return;
+      appState.componentSearchComposing = true;
+      if (appState.componentSearchTimer) {
+        clearTimeout(appState.componentSearchTimer);
+        appState.componentSearchTimer = null;
+      }
+    }
+
+    // 中文註解：處理 IME 組字完成後的搜尋更新；輸入為 compositionend 事件，輸出是保留即時搜尋的下一次安全重繪。
+    function handleTableCompositionEnd(event) {
+      if (event.target.id !== "componentSearchInput") return;
+      appState.componentSearchComposing = false;
+      updateComponentSearchKeyword(event.target);
+      scheduleComponentSearchRender(event.target.selectionStart, event.target.selectionEnd, 0);
     }
     // 中文註解：處理第四個 tab 的 Site 選單切換，更新左側圖片與右側 Name_CN 清單。
     function handleTableChange(event) {
@@ -5063,6 +5090,8 @@
     tableContainer.addEventListener("click", handleTableClick);
     tableContainer.addEventListener("change", handleTableChange);
     tableContainer.addEventListener("input", handleTableInput);
+    tableContainer.addEventListener("compositionstart", handleTableCompositionStart);
+    tableContainer.addEventListener("compositionend", handleTableCompositionEnd);
     dialogCloseButton.addEventListener("click", () => imageDialog.close());
     imageDialog.addEventListener("close", revokeCurrentImageUrl);
     documentDialogCloseButton.addEventListener("click", () => documentDialog.close());
